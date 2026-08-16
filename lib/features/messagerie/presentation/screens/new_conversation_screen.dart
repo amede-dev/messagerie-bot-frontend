@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/conversation_providers.dart';
+import 'chat_screen.dart';
 
-// Écran de création d'une conversation de groupe.
-// Le module Gp6-4 (groupes/classes) n'existe pas encore dans cette base de
-// données : pas de liaison a un espace reel possible pour l'instant.
-
+// Ecran de creation. Un tap sur le NOM d'un contact demarre directement
+// une discussion privee. La case a cocher sert a construire un groupe.
 class NewConversationScreen extends ConsumerStatefulWidget {
   const NewConversationScreen({super.key});
 
@@ -49,6 +48,28 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
     }
   }
 
+  Future<void> _ouvrirDiscussionPrivee(String userId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      final conversation = await ref
+          .read(conversationRepositoryProvider)
+          .creerConversationPrivee(userId);
+      await ref.read(conversationListProvider.notifier).rafraichir();
+      if (!mounted) return;
+      navigator.pop();
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(conversation: conversation),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Impossible de démarrer la discussion : $e')),
+      );
+    }
+  }
+
   Future<void> _creerGroupe() async {
     if (_nomController.text.trim().isEmpty ||
         _participantsSelectionnes.isEmpty) {
@@ -62,8 +83,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
           .creerConversationGroupe(
             nom: _nomController.text.trim(),
             participantIds: _participantsSelectionnes.toList(),
-            groupeLieId:
-                null, // pas d'espace/classe reel disponible pour l'instant
+            groupeLieId: null,
           );
       await ref.read(conversationListProvider.notifier).rafraichir();
       if (mounted) Navigator.of(context).pop();
@@ -84,7 +104,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Nouveau groupe'),
+        title: const Text('Nouvelle discussion'),
         actions: [
           TextButton(
             onPressed: _enCours ? null : _creerGroupe,
@@ -94,7 +114,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Créer'),
+                : const Text('Créer le groupe'),
           ),
         ],
       ),
@@ -106,15 +126,18 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
                 TextField(
                   controller: _nomController,
                   decoration: const InputDecoration(
-                    labelText: 'Nom du groupe',
+                    labelText:
+                        'Nom du groupe (optionnel pour discussion privée)',
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Ajouter des participants (${_participantsSelectionnes.length} sélectionnés)',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                const SizedBox(height: 8),
+                const Text(
+                  'Touche un nom pour démarrer une discussion privée, '
+                  'ou coche plusieurs contacts + un nom pour créer un groupe.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
+                const SizedBox(height: 12),
                 if (_contactsDisponibles.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -124,17 +147,23 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
                     ),
                   ),
                 ..._contactsDisponibles.entries.map(
-                  (e) => CheckboxListTile(
+                  (e) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    value: _participantsSelectionnes.contains(e.key),
-                    onChanged: (checked) => setState(() {
-                      if (checked == true) {
-                        _participantsSelectionnes.add(e.key);
-                      } else {
-                        _participantsSelectionnes.remove(e.key);
-                      }
-                    }),
+                    leading: CircleAvatar(
+                      child: Text(e.value.isNotEmpty ? e.value[0] : '?'),
+                    ),
                     title: Text(e.value),
+                    onTap: () => _ouvrirDiscussionPrivee(e.key),
+                    trailing: Checkbox(
+                      value: _participantsSelectionnes.contains(e.key),
+                      onChanged: (checked) => setState(() {
+                        if (checked == true) {
+                          _participantsSelectionnes.add(e.key);
+                        } else {
+                          _participantsSelectionnes.remove(e.key);
+                        }
+                      }),
+                    ),
                   ),
                 ),
               ],
