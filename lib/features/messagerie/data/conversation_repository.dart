@@ -23,8 +23,9 @@ class ConversationRepository {
     if (AppConfig.useMockBackend) return _mockMessages(conversationId);
 
     final response = await _api.getMessages(conversationId, page: page);
-    final data = response.data as List;
-    return data
+    final data = response.data as Map<String, dynamic>;
+    final content = data['content'] as List;
+    return content
         .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }

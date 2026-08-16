@@ -5,9 +5,6 @@ import '../../../../core/network/auth_repository.dart';
 import '../../../../core/network/websocket_service.dart';
 import '../../../messagerie/presentation/screens/conversation_list_screen.dart';
 
-// Ecran minimal : sert uniquement a obtenir un token JWT pour tester
-// le module Bot/Messagerie. Utilise le compte de demo cree automatiquement
-// par DemoDataLoader cote backend (rina@univ.mg / password123).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController(text: 'rina@univ.mg');
   final _motDePasseController = TextEditingController(text: 'password123');
   bool _chargement = false;
+  bool _motDePasseVisible = false;
   String? _erreur;
 
   Future<void> _seConnecter() async {
@@ -90,8 +88,20 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _motDePasseController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Mot de passe'),
+                obscureText: !_motDePasseVisible,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _motDePasseVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _motDePasseVisible = !_motDePasseVisible);
+                    },
+                  ),
+                ),
               ),
               if (_erreur != null) ...[
                 const SizedBox(height: 12),
