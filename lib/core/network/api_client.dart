@@ -1,0 +1,83 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../config/app_config.dart';
+
+class ApiClient {
+  ApiClient._internal() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: AppConfig.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: 'jwt_token');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (error, handler) => handler.next(error),
+      ),
+    );
+  }
+
+  static final ApiClient instance = ApiClient._internal();
+
+  late final Dio _dio;
+  final _storage = const FlutterSecureStorage();
+
+  Dio get dio => _dio;
+
+  // ---- Authentification (login uniquement, cf. compte de demo) ----
+  Future<Response> login(String email, String motDePasse) => _dio.post(
+        '/api/auth/login',
+        data: {'email': email, 'motDePasse': motDePasse},
+      );
+
+  // ---- Conversations ----
+  Future<Response> getConversations() => _dio.get('/api/conversations');
+
+  Future<Response> getMessages(String conversationId, {int page = 0}) =>
+      _dio.get(
+        '/api/conversations/$conversationId/messages',
+        queryParameters: {'page': page},
+      );
+
+  Future<Response> creerConversation(Map<String, dynamic> payload) =>
+      _dio.post('/api/conversations', data: payload);
+
+  Future<Response> ajouterParticipant(String conversationId, String userId) =>
+      _dio.post(
+        '/api/conversations/$conversationId/participants',
+        data: {'userId': userId},
+      );
+
+  // ---- Messages ----
+  Future<Response> envoyerMessageRest(Map<String, dynamic> payload) =>
+      _dio.post(
+        '/api/conversations/${payload['conversationId']}/messages',
+        data: payload,
+      );
+
+  Future<Response> marquerStatut(String messageId, String statut) =>
+      _dio.put('/api/messages/$messageId/status', data: {'statut': statut});
+
+  Future<Response> signalerMessage(String messageId, String motif) =>
+      _dio.post('/api/messages/$messageId/report', data: {'motif': motif});
+
+  // ---- Bot ----
+  Future<Response> envoyerMessageBot(String texte) =>
+      _dio.post('/api/bot/message', data: {'texte': texte});
+
+  // ---- Moderation ----
+  Future<Response> bloquerUtilisateur(String userId) =>
+      _dio.post('/api/users/$userId/block');
+
+  Future<Response> quitterConversation(String conversationId) =>
+      _dio.delete('/api/conversations/$conversationId');
+}
