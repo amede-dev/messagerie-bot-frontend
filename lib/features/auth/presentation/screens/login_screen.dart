@@ -2,8 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/auth_repository.dart';
+import '../../../../core/network/websocket_service.dart';
 import '../../../messagerie/presentation/screens/conversation_list_screen.dart';
 
+// Ecran minimal : sert uniquement a obtenir un token JWT pour tester
+// le module Bot/Messagerie. Utilise le compte de demo cree automatiquement
+// par DemoDataLoader cote backend (rina@univ.mg / password123).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController(text: 'rina@univ.mg');
   final _motDePasseController = TextEditingController(text: 'password123');
   bool _chargement = false;
-  bool _motDePasseVisible = false; // <-- NOUVEAU : etat du bouton oeil
   String? _erreur;
 
   Future<void> _seConnecter() async {
@@ -30,26 +33,28 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _motDePasseController.text,
       );
+
+      // IMPORTANT : sans cet appel, le WebSocket n'etait jamais initialise
+      // lors d'une connexion "fraiche" (seul le _StartupGate le faisait,
+      // et uniquement si un token existait deja au demarrage de l'app).
+      // C'est ce qui provoquait StompBadStateException en ouvrant un chat
+      // juste apres s'etre connecte via ce formulaire.
+      await WebSocketService.instance.connect();
+
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const ConversationListScreen()),
       );
     } on DioException catch (e) {
       setState(() {
-        if (e.type == DioExceptionType.connectionError ||
-            e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.unknown) {
-          _erreur =
-              'Impossible de joindre le serveur. Vérifie que le '
-              'backend tourne et que apiHost est correct dans app_config.dart.';
-        } else {
-          _erreur =
-              e.response?.data['erreur'] as String? ??
-              'Email ou mot de passe incorrect';
-        }
+        _erreur =
+            e.response?.data['erreur'] as String? ??
+            'Email ou mot de passe incorrect';
       });
     } catch (_) {
-      setState(() => _erreur = 'Une erreur inattendue est survenue.');
+      setState(
+        () => _erreur = 'Impossible de se connecter. Verifie ta connexion.',
+      );
     } finally {
       if (mounted) setState(() => _chargement = false);
     }
@@ -85,20 +90,8 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _motDePasseController,
-                obscureText: !_motDePasseVisible, // <-- bascule ici
-                decoration: InputDecoration(
-                  labelText: 'Mot de passe',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _motDePasseVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() => _motDePasseVisible = !_motDePasseVisible);
-                    },
-                  ),
-                ),
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Mot de passe'),
               ),
               if (_erreur != null) ...[
                 const SizedBox(height: 12),

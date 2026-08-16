@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/auth_repository.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
@@ -22,12 +24,51 @@ class ConversationListScreen extends ConsumerStatefulWidget {
 class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
   final _rechercheController = TextEditingController();
+  final _authRepository = AuthRepository();
   String _recherche = '';
 
   @override
   void dispose() {
     _rechercheController.dispose();
     super.dispose();
+  }
+
+  Future<void> _seDeconnecter() async {
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Se déconnecter ?'),
+        content: const Text(
+          'Tu devras te reconnecter pour accéder à tes conversations.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Se déconnecter',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirme != true || !mounted) return;
+
+    await _authRepository.deconnexion();
+
+    if (!mounted) return;
+    // pushAndRemoveUntil vide toute la pile de navigation : le bouton
+    // "retour" du telephone ne pourra plus revenir vers les ecrans
+    // authentifies apres deconnexion.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -42,6 +83,11 @@ class _ConversationListScreenState
       appBar: AppBar(
         title: const Text('Messages'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Se déconnecter',
+            onPressed: _seDeconnecter,
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: InkWell(
