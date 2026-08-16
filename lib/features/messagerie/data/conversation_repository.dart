@@ -52,6 +52,17 @@ class ConversationRepository {
     return ConversationModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<List<Map<String, dynamic>>> fetchUsers() async {
+    if (AppConfig.useMockBackend) {
+      return [
+        {'id': '2', 'nom': 'Rakoto', 'prenom': 'Hery'},
+      ];
+    }
+    final response = await _api.getUsers();
+    final data = response.data as List;
+    return data.cast<Map<String, dynamic>>();
+  }
+
   Future<ConversationModel> creerConversationPrivee(
     String autreUtilisateurId,
   ) async {

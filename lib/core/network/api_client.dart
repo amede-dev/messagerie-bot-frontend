@@ -35,9 +35,9 @@ class ApiClient {
 
   // ---- Authentification (login uniquement, cf. compte de demo) ----
   Future<Response> login(String email, String motDePasse) => _dio.post(
-        '/api/auth/login',
-        data: {'email': email, 'motDePasse': motDePasse},
-      );
+    '/api/auth/login',
+    data: {'email': email, 'motDePasse': motDePasse},
+  );
 
   // ---- Conversations ----
   Future<Response> getConversations() => _dio.get('/api/conversations');
@@ -77,6 +77,9 @@ class ApiClient {
   // ---- Moderation ----
   Future<Response> bloquerUtilisateur(String userId) =>
       _dio.post('/api/users/$userId/block');
+
+  // ---- Utilisateurs (pour choisir des participants) ----
+  Future<Response> getUsers() => _dio.get('/api/users');
 
   Future<Response> quitterConversation(String conversationId) =>
       _dio.delete('/api/conversations/$conversationId');
