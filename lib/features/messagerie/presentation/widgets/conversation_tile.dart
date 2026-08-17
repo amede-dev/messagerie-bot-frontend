@@ -11,11 +11,13 @@ import '../../../../shared/widgets/avatar_circle.dart';
 class ConversationTile extends StatelessWidget {
   final ConversationModel conversation;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const ConversationTile({
     super.key,
     required this.conversation,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -24,6 +26,7 @@ class ConversationTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(

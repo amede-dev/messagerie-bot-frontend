@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/models/conversation_model.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/models/app_user_model.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -70,6 +71,78 @@ class _ConversationListScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Impossible d’ouvrir la discussion : $erreur')),
+      );
+    }
+  }
+
+  Future<void> _ouvrirActionsConversation(
+    ConversationModel conversation,
+  ) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusL),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.delete_outline,
+                color: AppColors.danger,
+              ),
+              title: const Text(
+                'Supprimer la conversation',
+                style: TextStyle(color: AppColors.danger),
+              ),
+              onTap: () => Navigator.of(context).pop('supprimer'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (action != 'supprimer' || !mounted) return;
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la conversation ?'),
+        content: Text(
+          'La conversation avec « ${conversation.nom} » sera retirée de votre liste.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirme != true || !mounted) return;
+    try {
+      await ref
+          .read(conversationRepositoryProvider)
+          .quitterConversation(conversation.id);
+      ref
+          .read(conversationListProvider.notifier)
+          .retirerConversation(conversation.id);
+    } catch (erreur) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Impossible de supprimer la conversation : $erreur'),
+        ),
       );
     }
   }
@@ -379,6 +452,8 @@ class _ConversationListScreenState
                                       ChatScreen(conversation: conversation),
                                 ),
                               ),
+                              onLongPress: () =>
+                                  _ouvrirActionsConversation(conversation),
                             ),
                             const Divider(height: 1),
                           ],
