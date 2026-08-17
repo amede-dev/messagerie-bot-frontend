@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/auth_repository.dart';
+import '../../../../core/models/app_user_model.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/avatar_circle.dart';
 import '../../../../shared/widgets/uni_logo.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
@@ -50,6 +52,26 @@ class _ConversationListScreenState
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const BotChatScreen()));
+  }
+
+  Future<void> _demarrerConversationAvec(AppUserModel contact) async {
+    try {
+      final conversation = await ref
+          .read(conversationRepositoryProvider)
+          .creerConversationPrivee(contact.id);
+      await ref.read(conversationListProvider.notifier).rafraichir();
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(conversation: conversation),
+        ),
+      );
+    } catch (erreur) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible d’ouvrir la discussion : $erreur')),
+      );
+    }
   }
 
   Future<void> _seDeconnecter() async {
@@ -180,6 +202,7 @@ class _ConversationListScreenState
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationListProvider);
+    final contactsAsync = ref.watch(contactsUniversitairesProvider);
     const nomBot = 'Uni AI';
     final botCorrespond = nomBot.toLowerCase().contains(
       _recherche.toLowerCase(),
@@ -194,15 +217,6 @@ class _ConversationListScreenState
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
         ),
         actions: [
-          // --- Logo Uni : ouvre l'interface de l'assistant IA ---
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: _ouvrirUni,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6),
-              child: UniLogo(size: 34),
-            ),
-          ),
           IconButton(
             icon: Icon(_rechercheOuverte ? Icons.close : Icons.search),
             tooltip: 'Rechercher',
@@ -237,6 +251,10 @@ class _ConversationListScreenState
                 ),
               ),
             ),
+          _ContactsRapides(
+            contactsAsync: contactsAsync,
+            onContactTap: _demarrerConversationAvec,
+          ),
           Expanded(
             child: conversationsAsync.when(
               loading: () => const Center(
@@ -355,13 +373,112 @@ class _ConversationListScreenState
           ),
         ],
       ),
-      // --- Bouton flottant "+" : nouvelle discussion / nouveau groupe ---
-      floatingActionButton: FloatingActionButton(
-        onPressed: _ouvrirMenuNouvelleConversation,
-        backgroundColor: AppColors.primary,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      // L'assistant Uni AI est placé juste au-dessus du bouton de création,
+      // comme les assistants des applications de messagerie modernes.
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Tooltip(
+            message: 'Ouvrir Uni AI',
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: _ouvrirUni,
+                customBorder: const CircleBorder(),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: UniLogo(size: 48),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            onPressed: _ouvrirMenuNouvelleConversation,
+            backgroundColor: AppColors.primary,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _ContactsRapides extends StatelessWidget {
+  const _ContactsRapides({
+    required this.contactsAsync,
+    required this.onContactTap,
+  });
+
+  final AsyncValue<List<AppUserModel>> contactsAsync;
+  final ValueChanged<AppUserModel> onContactTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return contactsAsync.when(
+      loading: () => const SizedBox(
+        height: 98,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (contacts) {
+        if (contacts.isEmpty) return const SizedBox.shrink();
+        return SizedBox(
+          height: 108,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 6),
+                child: Text(
+                  'Contacts',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: contacts.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final contact = contacts[index];
+                    final prenom = contact.prenom.trim().isEmpty
+                        ? contact.nomComplet
+                        : contact.prenom.trim();
+                    return SizedBox(
+                      width: 58,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(32),
+                        onTap: () => onContactTap(contact),
+                        child: Column(
+                          children: [
+                            AvatarCircle(
+                              initiales: contact.initiales,
+                              size: 50,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              prenom,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+            ],
+          ),
+        );
+      },
     );
   }
 }

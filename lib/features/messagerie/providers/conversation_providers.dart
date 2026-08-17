@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/conversation_model.dart';
+import '../../../core/models/app_user_model.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/network/websocket_service.dart';
 import '../data/conversation_repository.dart';
@@ -10,6 +11,18 @@ import '../data/conversation_repository.dart';
 final conversationRepositoryProvider = Provider(
   (ref) => ConversationRepository(),
 );
+
+/// Annuaire affiché en haut de l'accueil, à la manière des contacts actifs
+/// dans les applications de messagerie. Les données viennent de `/api/users`.
+final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
+  ref,
+) async {
+  final contacts = await ref.read(conversationRepositoryProvider).fetchUsers();
+  contacts.sort(
+    (a, b) => a.nomComplet.toLowerCase().compareTo(b.nomComplet.toLowerCase()),
+  );
+  return contacts;
+});
 
 /// Liste des conversations affichée sur l'écran d'accueil de la messagerie.
 final conversationListProvider =
