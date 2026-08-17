@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/uni_logo.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
 import 'chat_screen.dart';
+import 'contact_list_screen.dart';
 import 'new_conversation_screen.dart';
 
-// Écran d'accueil du module Messagerie.
-// Le bot est toujours épinglé en première position.
-// Contient une barre de recherche qui filtre les conversations par nom.
+// Écran d'accueil du module Messagerie, calqué sur la disposition de
+// Messenger : "Messages" à gauche, logo Uni + recherche + paramètres à
+// droite, bouton flottant "+" pour démarrer une discussion ou un groupe.
 class ConversationListScreen extends ConsumerStatefulWidget {
   const ConversationListScreen({super.key});
 
@@ -26,11 +28,28 @@ class _ConversationListScreenState
   final _rechercheController = TextEditingController();
   final _authRepository = AuthRepository();
   String _recherche = '';
+  bool _rechercheOuverte = false;
 
   @override
   void dispose() {
     _rechercheController.dispose();
     super.dispose();
+  }
+
+  void _basculerRecherche() {
+    setState(() {
+      _rechercheOuverte = !_rechercheOuverte;
+      if (!_rechercheOuverte) {
+        _rechercheController.clear();
+        _recherche = '';
+      }
+    });
+  }
+
+  Future<void> _ouvrirUni() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const BotChatScreen()));
   }
 
   Future<void> _seDeconnecter() async {
@@ -62,91 +81,162 @@ class _ConversationListScreenState
     await _authRepository.deconnexion();
 
     if (!mounted) return;
-    // pushAndRemoveUntil vide toute la pile de navigation : le bouton
-    // "retour" du telephone ne pourra plus revenir vers les ecrans
-    // authentifies apres deconnexion.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
 
+  /// Menu "paramètres" ouvert via l'icône ⚙ en haut à droite.
+  Future<void> _ouvrirParametres() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusL),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Paramètres',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Se déconnecter',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                _seDeconnecter();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Choix "Nouvelle discussion" (1 à 1) ou "Nouveau groupe", accessible
+  /// via le bouton flottant "+", à l'instar des applications de
+  /// messagerie classiques.
+  Future<void> _ouvrirMenuNouvelleConversation() async {
+    final choix = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusL),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Nouveau',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Nouvelle discussion'),
+              subtitle: const Text('Choisir un contact dans l\'annuaire'),
+              onTap: () => Navigator.of(context).pop('privee'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_outlined),
+              title: const Text('Nouveau groupe'),
+              subtitle: const Text('Plusieurs participants à la fois'),
+              onTap: () => Navigator.of(context).pop('groupe'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (choix == null || !mounted) return;
+    if (choix == 'privee') {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
+    } else {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationListProvider);
-    const nomBot = 'Assistant Uni';
+    const nomBot = 'Uni AI';
     final botCorrespond = nomBot.toLowerCase().contains(
       _recherche.toLowerCase(),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: const Text(
+          'Messages',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Se déconnecter',
-            onPressed: _seDeconnecter,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NewConversationScreen(),
-                ),
-              ),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3A3A3C),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.edit_square,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
+          // --- Logo Uni : ouvre l'interface de l'assistant IA ---
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: _ouvrirUni,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6),
+              child: UniLogo(size: 34),
             ),
           ),
+          IconButton(
+            icon: Icon(_rechercheOuverte ? Icons.close : Icons.search),
+            tooltip: 'Rechercher',
+            onPressed: _basculerRecherche,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Paramètres',
+            onPressed: _ouvrirParametres,
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
         children: [
-          // --- Barre de recherche : fond noir, texte et icônes en blanc ---
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: TextField(
-              controller: _rechercheController,
-              onChanged: (val) => setState(() => _recherche = val),
-              style: const TextStyle(color: Colors.white),
-              cursorColor: Colors.white,
-              decoration: InputDecoration(
-                hintText: 'Rechercher',
-                hintStyle: const TextStyle(color: Colors.white70),
-                prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                suffixIcon: _recherche.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70),
-                        onPressed: () => setState(() {
-                          _rechercheController.clear();
-                          _recherche = '';
-                        }),
-                      ),
-                filled: true,
-                fillColor: Colors.black,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                  borderSide: BorderSide.none,
+          if (_rechercheOuverte)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: TextField(
+                controller: _rechercheController,
+                autofocus: true,
+                onChanged: (val) => setState(() => _recherche = val),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
-          ),
           Expanded(
             child: conversationsAsync.when(
               loading: () => const Center(
@@ -235,19 +325,15 @@ class _ConversationListScreenState
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                           ),
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.smart_toy_outlined),
-                          ),
+                          leading: const UniLogo(size: 42),
                           title: const Text(
                             nomBot,
                             style: TextStyle(fontWeight: FontWeight.w500),
                           ),
-                          subtitle: const Text('Bot · toujours disponible'),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const BotChatScreen(),
-                            ),
+                          subtitle: const Text(
+                            'Assistant intelligent · toujours disponible',
                           ),
+                          onTap: _ouvrirUni,
                         );
                       }
                       final conversation =
@@ -268,6 +354,13 @@ class _ConversationListScreenState
             ),
           ),
         ],
+      ),
+      // --- Bouton flottant "+" : nouvelle discussion / nouveau groupe ---
+      floatingActionButton: FloatingActionButton(
+        onPressed: _ouvrirMenuNouvelleConversation,
+        backgroundColor: AppColors.primary,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
   }

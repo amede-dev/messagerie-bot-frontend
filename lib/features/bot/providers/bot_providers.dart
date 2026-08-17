@@ -19,21 +19,9 @@ final botChatProvider = NotifierProvider<BotChatNotifier, List<BotChatEntry>>(
 class BotChatNotifier extends Notifier<List<BotChatEntry>> {
   @override
   List<BotChatEntry> build() {
-    return [
-      BotChatEntry(
-        message: MessageModel(
-          id: 'welcome',
-          conversationId: 'bot',
-          expediteurId: 'bot',
-          expediteurNom: 'Assistant Uni',
-          contenu: 'Bonjour, comment puis-je t\'aider aujourd\'hui ?',
-          type: MessageType.texte,
-          statut: MessageStatut.lu,
-          dateEnvoi: DateTime.now(),
-        ),
-        suggestions: const ['Mon emploi du temps', 'Contacter un humain'],
-      ),
-    ];
+    // Écran d'accueil vide, comme un assistant IA natif : aucun message
+    // n'est pré-rempli tant que l'utilisateur n'a pas écrit.
+    return [];
   }
 
   Future<void> envoyer(String texte) async {
@@ -49,7 +37,7 @@ class BotChatNotifier extends Notifier<List<BotChatEntry>> {
             id: DateTime.now().microsecondsSinceEpoch.toString(),
             conversationId: 'bot',
             expediteurId: 'bot',
-            expediteurNom: 'Assistant Uni',
+            expediteurNom: 'Uni AI',
             contenu: data['texte'] as String? ?? '',
             type: MessageType.texte,
             statut: MessageStatut.lu,
@@ -67,7 +55,7 @@ class BotChatNotifier extends Notifier<List<BotChatEntry>> {
             id: DateTime.now().microsecondsSinceEpoch.toString(),
             conversationId: 'bot',
             expediteurId: 'bot',
-            expediteurNom: 'Assistant Uni',
+            expediteurNom: 'Uni AI',
             contenu:
                 'Désolé, je rencontre un problème. Réessaie dans un instant.',
             type: MessageType.texte,
