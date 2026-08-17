@@ -321,25 +321,38 @@ class _ConversationListScreenState
                           )
                           .toList();
 
-                final itemCount =
-                    conversations.length + (botCorrespond ? 1 : 0);
+                final contacts =
+                    contactsAsync.valueOrNull ?? const <AppUserModel>[];
+                final contactsFiltres = _recherche.isEmpty
+                    ? contacts
+                    : contacts
+                          .where(
+                            (contact) => contact.nomComplet
+                                .toLowerCase()
+                                .contains(_recherche.toLowerCase()),
+                          )
+                          .toList();
 
-                if (itemCount == 0) {
+                if (conversations.isEmpty &&
+                    contactsFiltres.isEmpty &&
+                    !botCorrespond) {
                   return const Center(
-                    child: Text('Aucune conversation trouvée'),
+                    child: Text('Aucun contact ou message trouvé'),
                   );
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.read(conversationListProvider.notifier).rafraichir(),
-                  child: ListView.separated(
+                  onRefresh: () async {
+                    ref.invalidate(contactsUniversitairesProvider);
+                    await ref
+                        .read(conversationListProvider.notifier)
+                        .rafraichir();
+                  },
+                  child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: itemCount,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      if (botCorrespond && index == 0) {
-                        return ListTile(
+                    children: [
+                      if (botCorrespond) ...[
+                        ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                           ),
@@ -352,20 +365,59 @@ class _ConversationListScreenState
                             'Assistant intelligent · toujours disponible',
                           ),
                           onTap: _ouvrirUni,
-                        );
-                      }
-                      final conversation =
-                          conversations[index - (botCorrespond ? 1 : 0)];
-                      return ConversationTile(
-                        conversation: conversation,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ChatScreen(conversation: conversation),
+                        ),
+                        const Divider(height: 1),
+                      ],
+                      ...conversations.map(
+                        (conversation) => Column(
+                          children: [
+                            ConversationTile(
+                              conversation: conversation,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ChatScreen(conversation: conversation),
+                                ),
+                              ),
+                            ),
+                            const Divider(height: 1),
+                          ],
+                        ),
+                      ),
+                      if (contactsFiltres.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
+                          child: Text(
+                            'Tous les contacts',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                      );
-                    },
+                        ...contactsFiltres.map(
+                          (contact) => Column(
+                            children: [
+                              ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                leading: AvatarCircle(
+                                  initiales: contact.initiales,
+                                ),
+                                title: Text(contact.nomComplet),
+                                subtitle: contact.email == null
+                                    ? null
+                                    : Text(contact.email!),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => _demarrerConversationAvec(contact),
+                              ),
+                              const Divider(height: 1),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 );
               },
