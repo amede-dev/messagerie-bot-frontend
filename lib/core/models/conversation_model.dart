@@ -13,6 +13,7 @@ class ConversationModel {
   final MessageModel? dernierMessage;
   final int nombreNonLus;
   final bool enTrainDecrire;
+  final bool estEnLigne;
 
   const ConversationModel({
     required this.id,
@@ -23,6 +24,7 @@ class ConversationModel {
     this.dernierMessage,
     this.nombreNonLus = 0,
     this.enTrainDecrire = false,
+    this.estEnLigne = false,
   });
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class ConversationModel {
             )
           : null,
       nombreNonLus: json['nombreNonLus'] as int? ?? 0,
+      estEnLigne: json['enLigne'] == true || json['estEnLigne'] == true,
     );
   }
 
@@ -48,6 +51,7 @@ class ConversationModel {
     MessageModel? dernierMessage,
     int? nombreNonLus,
     bool? enTrainDecrire,
+    bool? estEnLigne,
   }) {
     return ConversationModel(
       id: id,
@@ -58,6 +62,7 @@ class ConversationModel {
       dernierMessage: dernierMessage ?? this.dernierMessage,
       nombreNonLus: nombreNonLus ?? this.nombreNonLus,
       enTrainDecrire: enTrainDecrire ?? this.enTrainDecrire,
+      estEnLigne: estEnLigne ?? this.estEnLigne,
     );
   }
 }

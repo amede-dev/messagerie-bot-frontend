@@ -3,18 +3,20 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// Barre de saisie en bas de l'écran de chat : pièce jointe, champ texte,
-// bouton d'envoi.l'indicateur "en train d'écrire" côté WebSocket.
+// bouton d'envoi, galerie et vocal.
 
 class ChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSend;
   final VoidCallback? onTyping;
-  final VoidCallback? onAttachmentTap;
+  final VoidCallback? onGalleryTap;
+  final VoidCallback? onVoiceTap;
 
   const ChatInputBar({
     super.key,
     required this.onSend,
     this.onTyping,
-    this.onAttachmentTap,
+    this.onGalleryTap,
+    this.onVoiceTap,
   });
 
   @override
@@ -39,8 +41,20 @@ class _ChatInputBarState extends State<ChatInputBar> {
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.attach_file, color: AppColors.textMuted),
-              onPressed: widget.onAttachmentTap,
+              tooltip: 'Galerie',
+              icon: const Icon(
+                Icons.photo_library_outlined,
+                color: AppColors.textMuted,
+              ),
+              onPressed: widget.onGalleryTap,
+            ),
+            IconButton(
+              tooltip: 'Message vocal',
+              icon: const Icon(
+                Icons.mic_none_outlined,
+                color: AppColors.textMuted,
+              ),
+              onPressed: widget.onVoiceTap,
             ),
             Expanded(
               child: TextField(

@@ -49,6 +49,22 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     if (actuel == null) return;
     state = AsyncData(actuel.where((c) => c.id != conversationId).toList());
   }
+
+  /// Retire immédiatement l'indicateur de non-lus lorsque la discussion est
+  /// ouverte. Le serveur reste la source de vérité après le rafraîchissement.
+  void marquerConversationLue(String conversationId) {
+    final actuel = state.valueOrNull;
+    if (actuel == null) return;
+    state = AsyncData(
+      actuel
+          .map(
+            (conversation) => conversation.id == conversationId
+                ? conversation.copyWith(nombreNonLus: 0)
+                : conversation,
+          )
+          .toList(),
+    );
+  }
 }
 
 // Historique + flux temps réel des messages d'une conversation ouverte.
@@ -85,6 +101,32 @@ class ChatMessagesNotifier
       conversationId: arg,
       contenu: texte,
       type: MessageType.texte,
+    );
+  }
+
+  /// Les messages au statut « reçu » deviennent lus dès que la conversation
+  /// est affichée. Les messages envoyés par l'utilisateur ne sont pas touchés.
+  Future<void> marquerMessagesRecusCommeLus() async {
+    final messagesRecus = (state.valueOrNull ?? const <MessageModel>[])
+        .where((message) => message.statut == MessageStatut.recu)
+        .toList();
+    if (messagesRecus.isEmpty) return;
+
+    final repo = ref.read(conversationRepositoryProvider);
+    await Future.wait(
+      messagesRecus.map((message) => repo.marquerMessageLu(message.id)),
+    );
+
+    final idsLus = messagesRecus.map((message) => message.id).toSet();
+    final actuel = state.valueOrNull ?? const <MessageModel>[];
+    state = AsyncData(
+      actuel
+          .map(
+            (message) => idsLus.contains(message.id)
+                ? message.copyWith(statut: MessageStatut.lu)
+                : message,
+          )
+          .toList(),
     );
   }
 

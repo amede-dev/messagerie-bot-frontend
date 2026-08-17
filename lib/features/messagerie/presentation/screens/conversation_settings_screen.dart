@@ -126,13 +126,6 @@ class _ConversationSettingsScreenState
             ),
           ),
           const SizedBox(height: 6),
-          const Center(
-            child: Chip(
-              avatar: Icon(Icons.lock, size: 15),
-              label: Text('Chiffré de bout en bout'),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
           const SizedBox(height: 18),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -171,19 +164,6 @@ class _ConversationSettingsScreenState
           const SizedBox(height: 18),
           const _TitreSection('Actions'),
           _Option(
-            icon: Icons.mark_email_unread_outlined,
-            titre: 'Marquer comme non lu',
-            onTap: () =>
-                _informer('La conversation est marquée comme non lue.'),
-          ),
-          _Option(
-            icon: Icons.share_outlined,
-            titre: 'Partager le contact',
-            onTap: () => _informer(
-              'Le partage du contact sera disponible prochainement.',
-            ),
-          ),
-          _Option(
             icon: Icons.group_add_outlined,
             titre: 'Créer un groupe avec $nom',
             onTap: () => Navigator.of(context).push(
@@ -201,28 +181,11 @@ class _ConversationSettingsScreenState
           ),
           const _TitreSection('Personnalisation'),
           _Option(
-            icon: Icons.thumb_up_alt_outlined,
-            titre: 'Réaction rapide',
-            onTap: () => _informer('Personnalisation bientôt disponible.'),
-          ),
-          _Option(
             icon: Icons.text_fields,
             titre: 'Pseudonymes',
             onTap: () => _informer('Personnalisation bientôt disponible.'),
           ),
-          const _TitreSection('Confidentialité et assistance'),
-          const _Option(
-            icon: Icons.lock_outline,
-            titre: 'Vérifier le chiffrement de bout en bout',
-          ),
-          const _Option(
-            icon: Icons.timer_outlined,
-            titre: 'Messages éphémères',
-          ),
-          const _Option(
-            icon: Icons.visibility_outlined,
-            titre: 'Confirmations de lecture',
-          ),
+          const _TitreSection('Sécurité et assistance'),
           _Option(
             icon: Icons.block_outlined,
             titre: 'Bloquer $nom',

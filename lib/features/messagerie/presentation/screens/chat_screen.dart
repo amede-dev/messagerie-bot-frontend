@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/models/conversation_model.dart';
+import '../../../../core/models/message_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
@@ -24,6 +25,7 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
+  bool _miseAJourLectureEnCours = false;
 
   // TODO: remplacer par l'id réel de l'utilisateur connecté (auth provider global)
   static const _utilisateurCourantId = 'me';
@@ -37,15 +39,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  /// Ouvre le bottom sheet Caméra / Galerie / Document, puis envoie le
-  /// fichier choisi dans la conversation courante.
-  Future<void> _choisirEtEnvoyerPieceJointe() async {
-    final selection = await afficherSelecteurPieceJointe(context);
+  /// Ouvre directement la galerie native, comme dans les messageries.
+  Future<void> _choisirEtEnvoyerImage() async {
+    final selection = await choisirImageDepuisGalerie();
     if (selection == null) return; // utilisateur a annulé
 
     ref
         .read(chatMessagesProvider(widget.conversation.id).notifier)
         .envoyerPieceJointe(selection.fichier, estImage: selection.estImage);
+  }
+
+  void _demarrerMessageVocal() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('L’enregistrement vocal sera disponible prochainement.'),
+      ),
+    );
   }
 
   void _annoncerAction(String action) {
@@ -55,10 +64,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   String _statutPresence() {
-    if (widget.conversation.enTrainDecrire) return 'En ligne';
+    if (widget.conversation.estEnLigne) return 'En ligne';
     final derniereActivite = widget.conversation.dernierMessage?.dateEnvoi;
     if (derniereActivite == null) return 'Hors ligne';
     return 'Vu le ${DateFormat('dd/MM à HH:mm').format(derniereActivite)}';
+  }
+
+  Future<void> _marquerMessagesCommeLus() async {
+    if (_miseAJourLectureEnCours) return;
+    _miseAJourLectureEnCours = true;
+    try {
+      await ref
+          .read(chatMessagesProvider(widget.conversation.id).notifier)
+          .marquerMessagesRecusCommeLus();
+      ref
+          .read(conversationListProvider.notifier)
+          .marquerConversationLue(widget.conversation.id);
+    } finally {
+      _miseAJourLectureEnCours = false;
+    }
   }
 
   @override
@@ -86,6 +110,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     widget.conversation.avatarInitiales ??
                     widget.conversation.nom.substring(0, 1),
                 size: 38,
+                estEnLigne:
+                    widget.conversation.type == ConversationType.privee &&
+                    widget.conversation.estEnLigne,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -129,7 +156,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () => _annoncerAction('L’appel vidéo'),
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            tooltip: 'Paramètres de la discussion',
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ConversationSettingsScreen(
@@ -150,6 +178,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _scrollEnBas(),
                 );
+                if (messages.any(
+                  (message) => message.statut == MessageStatut.recu,
+                )) {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _marquerMessagesCommeLus(),
+                  );
+                }
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(
@@ -179,7 +214,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onTyping: () => ref
                 .read(chatMessagesProvider(widget.conversation.id).notifier)
                 .notifierFrappe(),
-            onAttachmentTap: _choisirEtEnvoyerPieceJointe,
+            onGalleryTap: _choisirEtEnvoyerImage,
+            onVoiceTap: _demarrerMessageVocal,
           ),
         ],
       ),

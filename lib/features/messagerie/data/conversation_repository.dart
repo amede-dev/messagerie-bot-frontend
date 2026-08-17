@@ -142,6 +142,7 @@ class ConversationRepository {
         type: ConversationType.privee,
         nom: 'Hery Rakoto',
         avatarInitiales: 'HR',
+        estEnLigne: true,
         dernierMessage: MessageModel(
           id: 'm2',
           conversationId: 'conv-2',

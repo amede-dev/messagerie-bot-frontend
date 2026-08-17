@@ -23,6 +23,7 @@ class ConversationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estBot = conversation.type == ConversationType.bot;
+    final estNonLu = conversation.nombreNonLus > 0;
 
     return InkWell(
       onTap: onTap,
@@ -37,6 +38,9 @@ class ConversationTile extends StatelessWidget {
                     initiales:
                         conversation.avatarInitiales ??
                         conversation.nom.substring(0, 1),
+                    estEnLigne:
+                        conversation.type == ConversationType.privee &&
+                        conversation.estEnLigne,
                   ),
             const SizedBox(width: 12),
             Expanded(
@@ -48,9 +52,10 @@ class ConversationTile extends StatelessWidget {
                     children: [
                       Text(
                         conversation.nom,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                          fontWeight:
+                              estNonLu ? FontWeight.w700 : FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -59,9 +64,13 @@ class ConversationTile extends StatelessWidget {
                           DateFormat.Hm().format(
                             conversation.dernierMessage!.dateEnvoi,
                           ),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: estNonLu
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                            fontWeight:
+                                estNonLu ? FontWeight.w700 : FontWeight.w400,
                           ),
                         ),
                     ],
@@ -78,10 +87,14 @@ class ConversationTile extends StatelessWidget {
                             fontSize: 13,
                             color: conversation.enTrainDecrire
                                 ? AppColors.primary
-                                : AppColors.textSecondary,
+                                : (estNonLu
+                                      ? AppColors.textPrimary
+                                      : AppColors.textSecondary),
                             fontStyle: conversation.enTrainDecrire
                                 ? FontStyle.italic
                                 : FontStyle.normal,
+                            fontWeight:
+                                estNonLu ? FontWeight.w700 : FontWeight.w400,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
