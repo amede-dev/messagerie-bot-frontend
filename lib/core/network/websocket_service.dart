@@ -20,9 +20,6 @@ class WebSocketService {
   Stream<MessageModel> get messageStream => _messageController.stream;
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
 
-  // Permet d'attendre que la connexion STOMP soit reellement etablie
-  // avant de s'abonner/envoyer -- evite StompBadStateException, en
-  // particulier au reveil d'un backend Render en veille (offre gratuite).
   Completer<void> _connectedCompleter = Completer<void>();
   bool _isConnected = false;
 
@@ -30,7 +27,7 @@ class WebSocketService {
     if (AppConfig.useMockBackend) return;
 
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return; // pas connecte -> pas de WebSocket
+    if (token == null) return;
 
     if (_connectedCompleter.isCompleted) {
       _connectedCompleter = Completer<void>();
@@ -50,9 +47,17 @@ class WebSocketService {
         },
         onWebSocketError: (error) => print('Erreur WebSocket: $error'),
         onStompError: (frame) => print('Erreur STOMP: ${frame.body}'),
-        // Le reveil du backend Render peut prendre du temps : on laisse
-        // plus de marge qu'un serveur toujours actif.
-        connectionTimeout: const Duration(seconds: 45),
+        // Render (offre gratuite) : le reveil complet a pris jusqu'a 130s
+        // dans nos tests (Docker + JVM + Spring Boot). On laisse une
+        // marge large plutot que d'echouer sur un serveur juste lent.
+        connectionTimeout: const Duration(seconds: 150),
+        // IMPORTANT : sans heartbeat, le serveur Spring ferme les sessions
+        // WebSocket inactives au bout de ~100s ("No messages received
+        // after 100500 ms. Closing..." vu dans les logs Render). Ces deux
+        // lignes envoient un ping toutes les 10s pour garder la connexion
+        // vivante meme quand personne n'ecrit de message.
+        heartbeatOutgoing: const Duration(seconds: 10),
+        heartbeatIncoming: const Duration(seconds: 10),
       ),
     );
     _client!.activate();
@@ -74,15 +79,12 @@ class WebSocketService {
     );
   }
 
-  /// Attend que la connexion STOMP soit active (jusqu'a 20s), pour eviter
-  /// d'appeler subscribe/send sur un client pas encore pret.
   Future<void> _ensureConnected() async {
     if (_isConnected) return;
     try {
-      await _connectedCompleter.future.timeout(const Duration(seconds: 20));
+      await _connectedCompleter.future.timeout(const Duration(seconds: 150));
     } catch (_) {
-      // Timeout : on continue quand meme, l'appel echouera proprement
-      // plutot que de bloquer l'UI indefiniment.
+      // Timeout : on continue quand meme, l'appel echouera proprement.
     }
   }
 
@@ -99,8 +101,6 @@ class WebSocketService {
     );
   }
 
-  // Parametres nommes pour correspondre a conversation_providers.dart
-  // (ChatMessagesNotifier.envoyer / envoyerPieceJointe).
   Future<void> envoyerMessage({
     required String conversationId,
     required String contenu,

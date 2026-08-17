@@ -8,8 +8,13 @@ class ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        // Render (offre gratuite) met le serveur en veille apres 15 min
+        // d'inactivite : le reveil complet (Docker + JVM + Spring Boot)
+        // peut prendre 30 a 90s. Des timeouts courts (10s) declenchaient
+        // des "receive timeout" qui n'etaient pas de vraies pannes, juste
+        // un serveur encore endormi au moment de l'appel.
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
       ),
     );
     _dio.interceptors.add(

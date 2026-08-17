@@ -149,9 +149,59 @@ class _ConversationListScreenState
           ),
           Expanded(
             child: conversationsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) =>
-                  Center(child: Text('Erreur de chargement : $err')),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        'Connexion au serveur...\n'
+                        'Cela peut prendre jusqu\'à 2 minutes si le serveur '
+                        'vient de se réveiller (offre gratuite Render).',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              error: (err, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Le serveur met parfois jusqu\'à deux minutes à '
+                        'se réveiller (offre gratuite Render).',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$err',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () => ref
+                            .read(conversationListProvider.notifier)
+                            .rafraichir(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (conversationsBrutes) {
                 final conversations = _recherche.isEmpty
                     ? conversationsBrutes
