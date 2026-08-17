@@ -2,47 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/app_user_model.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 
 // Écran "Voir les membres" — accessible depuis les paramètres d'un groupe.
-// Données factices en attendant l'endpoint réel
-// GET /api/conversations/{id}/participants côté backend.
-class ConversationMembersScreen extends StatelessWidget {
+// L'API GET des participants n'est pas encore disponible : on affiche donc
+// uniquement les membres sélectionnés pendant la session courante.
+class ConversationMembersScreen extends ConsumerWidget {
+  final String conversationId;
   final String conversationNom;
 
-  const ConversationMembersScreen({super.key, required this.conversationNom});
-
-  // TODO: remplacer par un vrai appel API listant les ConversationParticipant
-  static const _membres = [
-    {'initiales': 'HR', 'nom': 'Hery Rakoto', 'role': 'Admin'},
-    {'initiales': 'CI', 'nom': 'Claudine Ihanta', 'role': 'Membre'},
-    {'initiales': 'MJ', 'nom': 'Mamy Joel', 'role': 'Membre'},
-    {'initiales': 'moi', 'nom': 'Moi', 'role': 'Membre'},
-  ];
+  const ConversationMembersScreen({
+    super.key,
+    required this.conversationId,
+    required this.conversationNom,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final membres = ref.watch(participantsGroupesProvider)[conversationId] ?? [];
     return Scaffold(
       appBar: AppBar(title: Text('Membres · $conversationNom')),
-      body: ListView.separated(
-        itemCount: _membres.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final membre = _membres[index];
-          return ListTile(
-            leading: AvatarCircle(initiales: membre['initiales']!),
-            title: Text(membre['nom']!),
-            trailing: membre['role'] == 'Admin'
-                ? const Text(
-                    'Admin',
-                    style: TextStyle(fontSize: 12, color: AppColors.primary),
-                  )
-                : null,
-          );
-        },
-      ),
+      body: membres.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'La liste des participants n’est pas encore disponible pour ce groupe.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : ListView.separated(
+              itemCount: membres.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final membre = membres[index];
+                return ListTile(
+                  leading: AvatarCircle(initiales: membre.initiales),
+                  title: Text(membre.nomComplet),
+                );
+              },
+            ),
     );
   }
 }
@@ -81,6 +82,17 @@ class _AddGroupParticipantsScreenState
         ),
       );
       if (!mounted) return;
+      final contacts = ref.read(contactsUniversitairesProvider).valueOrNull ??
+          const <AppUserModel>[];
+      final nouveauxMembres = contacts
+          .where((contact) => _selection.contains(contact.id))
+          .toList();
+      final participantsConnus = ref.read(participantsGroupesProvider);
+      final membresActuels = participantsConnus[widget.conversationId] ?? [];
+      ref.read(participantsGroupesProvider.notifier).state = {
+        ...participantsConnus,
+        widget.conversationId: [...membresActuels, ...nouveauxMembres],
+      };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

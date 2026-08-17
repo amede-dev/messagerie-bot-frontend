@@ -24,6 +24,11 @@ final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
   return contacts;
 });
 
+/// Participants connus par le client pour les groupes créés pendant la session.
+/// Une API GET dédiée est nécessaire pour conserver cette liste après relance.
+final participantsGroupesProvider =
+    StateProvider<Map<String, List<AppUserModel>>>((ref) => {});
+
 /// Liste des conversations affichée sur l'écran d'accueil de la messagerie.
 final conversationListProvider =
     AsyncNotifierProvider<ConversationListNotifier, List<ConversationModel>>(

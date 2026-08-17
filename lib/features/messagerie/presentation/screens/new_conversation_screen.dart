@@ -59,7 +59,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
     setState(() => _enCours = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref
+      final conversation = await ref
           .read(conversationRepositoryProvider)
           .creerConversationGroupe(
             nom: _nomController.text.trim(),
@@ -67,6 +67,14 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
             groupeLieId:
                 null, // pas d'espace/classe reel disponible pour l'instant
           );
+      final participants = _contactsDisponibles
+          .where((user) => _participantsSelectionnes.contains(user.id))
+          .toList();
+      final participantsConnus = ref.read(participantsGroupesProvider);
+      ref.read(participantsGroupesProvider.notifier).state = {
+        ...participantsConnus,
+        conversation.id: participants,
+      };
       await ref.read(conversationListProvider.notifier).rafraichir();
       if (mounted) Navigator.of(context).pop();
     } catch (e) {

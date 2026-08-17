@@ -113,15 +113,16 @@ class _ConversationSettingsScreenState
   }
 
   Future<void> _modifierNomGroupe() async {
-    final controller = TextEditingController(text: _nomGroupe);
+    var nomSaisi = _nomGroupe;
     final nouveauNom = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Modifier le nom du groupe'),
-        content: TextField(
-          controller: controller,
+        content: TextFormField(
+          initialValue: _nomGroupe,
           autofocus: true,
           maxLength: 60,
+          onChanged: (valeur) => nomSaisi = valeur,
           decoration: const InputDecoration(labelText: 'Nom du groupe'),
         ),
         actions: [
@@ -130,13 +131,12 @@ class _ConversationSettingsScreenState
             child: const Text('Annuler'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            onPressed: () => Navigator.of(context).pop(nomSaisi.trim()),
             child: const Text('Enregistrer'),
           ),
         ],
       ),
     );
-    controller.dispose();
     if (nouveauNom == null || nouveauNom.isEmpty || !mounted) return;
     setState(() => _nomGroupe = nouveauNom);
     ref
@@ -233,7 +233,10 @@ class _ConversationSettingsScreenState
       titre: 'Voir les participants',
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ConversationMembersScreen(conversationNom: nom),
+          builder: (_) => ConversationMembersScreen(
+            conversationId: widget.conversation.id,
+            conversationNom: nom,
+          ),
         ),
       ),
     ),
