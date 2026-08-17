@@ -1,4 +1,5 @@
 import '../../../core/config/app_config.dart';
+import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/network/api_client.dart';
@@ -53,17 +54,26 @@ class ConversationRepository {
     return ConversationModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<List<Map<String, dynamic>>> fetchUsers() async {
+  /// Annuaire des utilisateurs de l'université, issu de la table `app_user`
+  /// (peuplée à partir de `Liste_consolidee_ENI_sans_doublons.xlsx`).
+  /// Utilisé par l'écran "Nouvelle discussion" (contact_list_screen.dart)
+  /// et par l'écran "Nouveau groupe" (new_conversation_screen.dart).
+  Future<List<AppUserModel>> fetchUsers() async {
     if (AppConfig.useMockBackend) {
-      return [
-        {'id': '2', 'nom': 'Rakoto', 'prenom': 'Hery'},
-      ];
+      return const [AppUserModel(id: '2', nom: 'Rakoto', prenom: 'Hery')];
     }
     final response = await _api.getUsers();
     final data = response.data as List;
-    return data.cast<Map<String, dynamic>>();
+    return data
+        .map((json) => AppUserModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
+  /// Démarre (ou rouvre) une conversation privée (1 à 1) avec l'utilisateur
+  /// dont l'identifiant est [autreUtilisateurId]. Côté backend, si une
+  /// conversation privée existe déjà entre les deux utilisateurs, elle est
+  /// retournée telle quelle : jamais de doublon, même en sélectionnant
+  /// plusieurs fois le même contact dans l'annuaire.
   Future<ConversationModel> creerConversationPrivee(
     String autreUtilisateurId,
   ) async {

@@ -1,0 +1,50 @@
+class AppUserModel {
+  final String id;
+  final String nom;
+  final String prenom;
+  final String? email;
+
+  const AppUserModel({
+    required this.id,
+    required this.nom,
+    required this.prenom,
+    this.email,
+  });
+
+  factory AppUserModel.fromJson(Map<String, dynamic> json) {
+    return AppUserModel(
+      id: json['id'].toString(),
+      nom: (json['nom'] as String? ?? '').trim(),
+      prenom: (json['prenom'] as String? ?? '').trim(),
+      email: json['email'] as String?,
+    );
+  }
+
+  /// Nom affiché, propre quelle que soit la casse d'origine dans la base :
+  /// "AMBOARAMPITIAVANA" / " Nomena Sarobidy " -> "Nomena Sarobidy Amboarampitiavana"
+  String get nomComplet =>
+      '${_capitaliserMots(prenom)} ${_capitaliserMots(nom)}'.trim();
+
+  /// Initiales utilisées pour l'avatar rond (ex : "NA").
+  String get initiales {
+    final p = prenom.trim();
+    final n = nom.trim();
+    final i1 = p.isNotEmpty ? p[0].toUpperCase() : '';
+    final i2 = n.isNotEmpty ? n[0].toUpperCase() : '';
+    final resultat = '$i1$i2';
+    return resultat.isEmpty ? '?' : resultat;
+  }
+
+  static String _capitaliserMots(String texte) {
+    final propre = texte.trim();
+    if (propre.isEmpty) return propre;
+    return propre
+        .split(RegExp(r'\s+'))
+        .map(
+          (mot) => mot.isEmpty
+              ? mot
+              : '${mot[0].toUpperCase()}${mot.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+}

@@ -38,10 +38,25 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  // ---- Authentification (login uniquement, cf. compte de demo) ----
+  // ---- Authentification ----
   Future<Response> login(String email, String motDePasse) => _dio.post(
     '/api/auth/login',
     data: {'email': email, 'motDePasse': motDePasse},
+  );
+
+  Future<Response> inscrire({
+    required String nom,
+    required String prenom,
+    required String email,
+    required String motDePasse,
+  }) => _dio.post(
+    '/api/auth/register',
+    data: {
+      'nom': nom,
+      'prenom': prenom,
+      'email': email,
+      'motDePasse': motDePasse,
+    },
   );
 
   // ---- Conversations ----

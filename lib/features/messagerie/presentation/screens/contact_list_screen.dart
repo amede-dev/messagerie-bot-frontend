@@ -1,0 +1,275 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/models/app_user_model.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/avatar_circle.dart';
+import '../../providers/conversation_providers.dart';
+import 'chat_screen.dart';
+
+/// Écran « Nouvelle discussion » : carnet de contacts affichant tous les
+/// utilisateurs de l'université (table `app_user`, peuplée à partir de
+/// `Liste_consolidee_ENI_sans_doublons.xlsx`), façon application de
+/// messagerie classique (recherche + liste triée et sectionnée par
+/// lettre).
+///
+/// Sélectionner un contact récupère son identifiant (`AppUserModel.id`)
+/// et démarre — ou rouvre si elle existe déjà — la conversation privée
+/// (1 à 1) correspondante, par opposition à une conversation de groupe
+/// qui implique plusieurs identifiants (voir NewConversationScreen).
+class ContactListScreen extends ConsumerStatefulWidget {
+  const ContactListScreen({super.key});
+
+  @override
+  ConsumerState<ContactListScreen> createState() => _ContactListScreenState();
+}
+
+class _ContactListScreenState extends ConsumerState<ContactListScreen> {
+  final _rechercheController = TextEditingController();
+  String _recherche = '';
+
+  bool _chargement = true;
+  String? _erreur;
+  List<AppUserModel> _contacts = [];
+
+  // Identifiant du contact sur lequel on vient de taper : affiche un
+  // loader sur sa ligne et bloque les autres taps pendant la création
+  // (ou la récupération) de la conversation.
+  String? _idEnCoursDeCreation;
+
+  @override
+  void initState() {
+    super.initState();
+    _chargerContacts();
+  }
+
+  @override
+  void dispose() {
+    _rechercheController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _chargerContacts() async {
+    setState(() {
+      _chargement = true;
+      _erreur = null;
+    });
+    try {
+      final repo = ref.read(conversationRepositoryProvider);
+      final utilisateurs = await repo.fetchUsers();
+      // Tri alphabétique par nom de famille, comme un carnet de contacts.
+      utilisateurs.sort(
+        (a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()),
+      );
+      if (!mounted) return;
+      setState(() {
+        _contacts = utilisateurs;
+        _chargement = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _erreur = '$e';
+        _chargement = false;
+      });
+    }
+  }
+
+  List<AppUserModel> get _contactsFiltres {
+    if (_recherche.trim().isEmpty) return _contacts;
+    final q = _recherche.trim().toLowerCase();
+    return _contacts
+        .where((u) => u.nomComplet.toLowerCase().contains(q))
+        .toList();
+  }
+
+  /// Regroupe les contacts filtrés par première lettre du nom, pour des
+  /// en-têtes de section (A, B, C…) comme dans un carnet de contacts.
+  Map<String, List<AppUserModel>> get _contactsParLettre {
+    final groupes = <String, List<AppUserModel>>{};
+    for (final u in _contactsFiltres) {
+      final lettre = u.nom.isNotEmpty ? u.nom[0].toUpperCase() : '#';
+      groupes.putIfAbsent(lettre, () => []).add(u);
+    }
+    return groupes;
+  }
+
+  /// Récupère l'identifiant du contact sélectionné et lance la
+  /// conversation privée : le backend renvoie la discussion existante si
+  /// elle existe déjà (voir ConversationService.creer côté Spring Boot),
+  /// donc aucun doublon n'est créé en resélectionnant le même contact.
+  Future<void> _demarrerConversationAvec(AppUserModel contact) async {
+    if (_idEnCoursDeCreation != null) return; // évite le double-tap
+    setState(() => _idEnCoursDeCreation = contact.id);
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final conversation = await ref
+          .read(conversationRepositoryProvider)
+          .creerConversationPrivee(contact.id);
+
+      // Rafraîchit la liste d'accueil pour que la discussion (nouvelle ou
+      // retrouvée) y apparaisse immédiatement au retour.
+      await ref.read(conversationListProvider.notifier).rafraichir();
+
+      if (!mounted) return;
+      // Retire l'écran "Nouvelle discussion" de la pile puis ouvre le
+      // chat : le bouton retour ramène directement à la liste des messages.
+      navigator.pop();
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(conversation: conversation),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Impossible de démarrer la discussion : $e')),
+      );
+      if (mounted) setState(() => _idEnCoursDeCreation = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Nouvelle discussion'),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: TextField(
+              controller: _rechercheController,
+              onChanged: (val) => setState(() => _recherche = val),
+              decoration: InputDecoration(
+                hintText: 'Rechercher un contact',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _recherche.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() {
+                          _rechercheController.clear();
+                          _recherche = '';
+                        }),
+                      ),
+                filled: true,
+                fillColor: AppColors.bgLight,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: _corps()),
+        ],
+      ),
+    );
+  }
+
+  Widget _corps() {
+    if (_chargement) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_erreur != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+              const SizedBox(height: 12),
+              const Text(
+                'Le serveur met parfois jusqu\'à deux minutes à '
+                'se réveiller (offre gratuite Render).',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$_erreur',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _chargerContacts,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_contactsFiltres.isEmpty) {
+      return const Center(child: Text('Aucun contact trouvé'));
+    }
+
+    final groupes = _contactsParLettre;
+    final lettres = groupes.keys.toList()..sort();
+
+    return RefreshIndicator(
+      onRefresh: _chargerContacts,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: 8),
+        itemCount: lettres.length,
+        itemBuilder: (context, sectionIndex) {
+          final lettre = lettres[sectionIndex];
+          final contacts = groupes[lettre]!;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                color: AppColors.bgLight,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Text(
+                  lettre,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              ...contacts.map(_ligneContact),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _ligneContact(AppUserModel contact) {
+    final enCours = _idEnCoursDeCreation == contact.id;
+    return ListTile(
+      leading: AvatarCircle(initiales: contact.initiales),
+      title: Text(contact.nomComplet),
+      subtitle: contact.email != null && contact.email!.isNotEmpty
+          ? Text(contact.email!)
+          : null,
+      trailing: enCours
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: enCours ? null : () => _demarrerConversationAvec(contact),
+    );
+  }
+}
