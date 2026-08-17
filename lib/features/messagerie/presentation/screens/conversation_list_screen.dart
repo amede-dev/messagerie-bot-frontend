@@ -439,7 +439,6 @@ class _ConversationListScreenState
                           ),
                           onTap: _ouvrirUni,
                         ),
-                        const Divider(height: 1),
                       ],
                       ...conversations.map(
                         (conversation) => Column(
@@ -455,7 +454,6 @@ class _ConversationListScreenState
                               onLongPress: () =>
                                   _ouvrirActionsConversation(conversation),
                             ),
-                            const Divider(height: 1),
                           ],
                         ),
                       ),
@@ -481,13 +479,8 @@ class _ConversationListScreenState
                                   initiales: contact.initiales,
                                 ),
                                 title: Text(contact.nomComplet),
-                                subtitle: contact.email == null
-                                    ? null
-                                    : Text(contact.email!),
-                                trailing: const Icon(Icons.chevron_right),
                                 onTap: () => _demarrerConversationAvec(contact),
                               ),
-                              const Divider(height: 1),
                             ],
                           ),
                         ),

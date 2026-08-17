@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/models/conversation_model.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/attachment_picker_sheet.dart';
 import '../widgets/chat_input_bar.dart';
@@ -45,6 +48,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .envoyerPieceJointe(selection.fichier, estImage: selection.estImage);
   }
 
+  void _annoncerAction(String action) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$action sera disponible prochainement.')),
+    );
+  }
+
+  String _statutPresence() {
+    if (widget.conversation.enTrainDecrire) return 'En ligne';
+    final derniereActivite = widget.conversation.dernierMessage?.dateEnvoi;
+    if (derniereActivite == null) return 'Hors ligne';
+    return 'Vu le ${DateFormat('dd/MM à HH:mm').format(derniereActivite)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(
@@ -54,8 +70,64 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.conversation.nom),
+        titleSpacing: 0,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  ConversationSettingsScreen(conversation: widget.conversation),
+            ),
+          ),
+          child: Row(
+            children: [
+              AvatarCircle(
+                initiales:
+                    widget.conversation.avatarInitiales ??
+                    widget.conversation.nom.substring(0, 1),
+                size: 38,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.conversation.nom,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      _statutPresence(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: widget.conversation.enTrainDecrire
+                            ? AppColors.success
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         actions: [
+          IconButton(
+            tooltip: 'Appeler',
+            icon: const Icon(Icons.call_outlined),
+            onPressed: () => _annoncerAction('L’appel audio'),
+          ),
+          IconButton(
+            tooltip: 'Appel vidéo',
+            icon: const Icon(Icons.videocam_outlined),
+            onPressed: () => _annoncerAction('L’appel vidéo'),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () => Navigator.of(context).push(

@@ -5,15 +5,14 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
-import 'conversation_members_screen.dart';
+import 'new_conversation_screen.dart';
 import 'shared_media_screen.dart';
 
-// Écran de paramètres d'une conversation : notifications, médias,
-// membres, signalement, quitter le groupe.
+/// Profil et options d'une discussion, inspirés des messageries modernes.
 class ConversationSettingsScreen extends ConsumerStatefulWidget {
-  final ConversationModel conversation;
-
   const ConversationSettingsScreen({super.key, required this.conversation});
+
+  final ConversationModel conversation;
 
   @override
   ConsumerState<ConversationSettingsScreen> createState() =>
@@ -25,155 +24,313 @@ class _ConversationSettingsScreenState
   bool _notificationsActivees = true;
   bool _enCours = false;
 
-  Future<void> _signaler() async {
-    // TODO: ouvrir un formulaire de motif avant l'appel réel
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Conversation signalée à la modération')),
-    );
+  bool get _estGroupe => widget.conversation.type == ConversationType.groupe;
+
+  void _informer(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _quitterLeGroupe() async {
-    final estGroupe = widget.conversation.type == ConversationType.groupe;
+  Future<void> _confirmerBlocage() async {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          estGroupe ? 'Quitter le groupe ?' : 'Quitter la conversation ?',
-        ),
-        content: Text(
-          estGroupe
-              ? 'Tu ne recevras plus les messages de "${widget.conversation.nom}". '
-                    'Un administrateur devra te réinviter pour revenir.'
-              : 'Cette conversation sera retirée de ta liste.',
+        title: Text('Bloquer ${widget.conversation.nom} ?'),
+        content: const Text(
+          'Cette action empêchera cette personne de vous envoyer de nouveaux messages.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Annuler'),
           ),
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Quitter',
-              style: TextStyle(color: AppColors.danger),
-            ),
+            child: const Text('Bloquer'),
           ),
         ],
       ),
     );
+    if (confirme != true || !mounted) return;
+    _informer(
+      'Le blocage sera activé dès que l’API de profil sera disponible.',
+    );
+  }
 
+  Future<void> _supprimerConversation() async {
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          _estGroupe ? 'Quitter le groupe ?' : 'Supprimer la conversation ?',
+        ),
+        content: Text(
+          _estGroupe
+              ? 'Vous ne recevrez plus les messages de ce groupe.'
+              : 'Cette conversation sera retirée de votre liste.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(_estGroupe ? 'Quitter' : 'Supprimer'),
+          ),
+        ],
+      ),
+    );
     if (confirme != true || !mounted) return;
 
     setState(() => _enCours = true);
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      // 1. Appel backend (no-op en mode mock, voir AppConfig.useMockBackend)
       await ref
           .read(conversationRepositoryProvider)
           .quitterConversation(widget.conversation.id);
-      // 2. Retrait immédiat de la liste affichée (fonctionne aussi en mock)
       ref
           .read(conversationListProvider.notifier)
           .retirerConversation(widget.conversation.id);
-      // 3. Retour direct à l'écran d'accueil de la messagerie
-      navigator.popUntil((route) => route.isFirst);
-    } catch (e) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de quitter le groupe pour le moment.'),
-        ),
-      );
-      if (mounted) setState(() => _enCours = false);
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _enCours = false);
+        _informer('Impossible de réaliser cette action pour le moment.');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final estGroupe = widget.conversation.type == ConversationType.groupe;
-
+    final nom = widget.conversation.nom;
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres')),
+      appBar: AppBar(),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 28),
         children: [
+          const SizedBox(height: 12),
+          AvatarCircle(
+            initiales:
+                widget.conversation.avatarInitiales ?? nom.substring(0, 1),
+            size: 84,
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              nom,
+              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Center(
+            child: Chip(
+              avatar: Icon(Icons.lock, size: 15),
+              label: Text('Chiffré de bout en bout'),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(height: 18),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                AvatarCircle(
-                  initiales:
-                      widget.conversation.avatarInitiales ??
-                      widget.conversation.nom.substring(0, 1),
-                  size: 64,
+                _Raccourci(
+                  icon: Icons.call,
+                  label: 'Appeler',
+                  onTap: () =>
+                      _informer('L’appel audio sera disponible prochainement.'),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  widget.conversation.nom,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                _Raccourci(
+                  icon: Icons.videocam,
+                  label: 'Discussion vidéo',
+                  onTap: () =>
+                      _informer('L’appel vidéo sera disponible prochainement.'),
+                ),
+                _Raccourci(
+                  icon: Icons.person_outline,
+                  label: 'Profil',
+                  onTap: () => _informer('Profil de $nom'),
+                ),
+                _Raccourci(
+                  icon: _notificationsActivees
+                      ? Icons.notifications_outlined
+                      : Icons.notifications_off_outlined,
+                  label: 'Mettre en sourdine',
+                  onTap: () => setState(
+                    () => _notificationsActivees = !_notificationsActivees,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            secondary: const Icon(Icons.notifications_outlined),
-            title: const Text('Notifications'),
-            value: _notificationsActivees,
-            onChanged: (val) => setState(() => _notificationsActivees = val),
+          const SizedBox(height: 18),
+          const _TitreSection('Actions'),
+          _Option(
+            icon: Icons.mark_email_unread_outlined,
+            titre: 'Marquer comme non lu',
+            onTap: () =>
+                _informer('La conversation est marquée comme non lue.'),
           ),
-          ListTile(
-            leading: const Icon(Icons.photo_outlined),
-            title: const Text('Médias partagés'),
-            trailing: const Icon(Icons.chevron_right),
+          _Option(
+            icon: Icons.share_outlined,
+            titre: 'Partager le contact',
+            onTap: () => _informer(
+              'Le partage du contact sera disponible prochainement.',
+            ),
+          ),
+          _Option(
+            icon: Icons.group_add_outlined,
+            titre: 'Créer un groupe avec $nom',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NewConversationScreen()),
+            ),
+          ),
+          _Option(
+            icon: Icons.photo_outlined,
+            titre: 'Médias partagés',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) =>
-                    SharedMediaScreen(conversationNom: widget.conversation.nom),
+                builder: (_) => SharedMediaScreen(conversationNom: nom),
               ),
             ),
           ),
-          if (estGroupe)
-            ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('Voir les membres'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ConversationMembersScreen(
-                    conversationNom: widget.conversation.nom,
-                  ),
-                ),
-              ),
-            ),
-          const Divider(height: 24),
-          ListTile(
-            leading: const Icon(Icons.flag_outlined, color: AppColors.danger),
-            title: const Text(
-              'Signaler',
-              style: TextStyle(color: AppColors.danger),
-            ),
-            onTap: _signaler,
+          const _TitreSection('Personnalisation'),
+          _Option(
+            icon: Icons.thumb_up_alt_outlined,
+            titre: 'Réaction rapide',
+            onTap: () => _informer('Personnalisation bientôt disponible.'),
           ),
-          ListTile(
-            leading: _enCours
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout, color: AppColors.danger),
-            title: Text(
-              estGroupe ? 'Quitter le groupe' : 'Quitter la conversation',
-              style: const TextStyle(color: AppColors.danger),
-            ),
-            onTap: _enCours ? null : _quitterLeGroupe,
+          _Option(
+            icon: Icons.text_fields,
+            titre: 'Pseudonymes',
+            onTap: () => _informer('Personnalisation bientôt disponible.'),
+          ),
+          const _TitreSection('Confidentialité et assistance'),
+          const _Option(
+            icon: Icons.lock_outline,
+            titre: 'Vérifier le chiffrement de bout en bout',
+          ),
+          const _Option(
+            icon: Icons.timer_outlined,
+            titre: 'Messages éphémères',
+          ),
+          const _Option(
+            icon: Icons.visibility_outlined,
+            titre: 'Confirmations de lecture',
+          ),
+          _Option(
+            icon: Icons.block_outlined,
+            titre: 'Bloquer $nom',
+            danger: true,
+            onTap: _confirmerBlocage,
+          ),
+          _Option(
+            icon: Icons.flag_outlined,
+            titre: 'Signaler',
+            danger: true,
+            onTap: () => _informer('Conversation signalée à la modération.'),
+          ),
+          _Option(
+            icon: _enCours ? Icons.hourglass_top : Icons.delete_outline,
+            titre: _estGroupe
+                ? 'Quitter le groupe'
+                : 'Supprimer la conversation',
+            danger: true,
+            onTap: _enCours ? null : _supprimerConversation,
           ),
         ],
       ),
     );
   }
+}
+
+class _TitreSection extends StatelessWidget {
+  const _TitreSection(this.titre);
+  final String titre;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
+    child: Text(
+      titre,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textSecondary,
+      ),
+    ),
+  );
+}
+
+class _Raccourci extends StatelessWidget {
+  const _Raccourci({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 72,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: onTap,
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: AppColors.primaryLight,
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _Option extends StatelessWidget {
+  const _Option({
+    required this.icon,
+    required this.titre,
+    this.onTap,
+    this.danger = false,
+  });
+  final IconData icon;
+  final String titre;
+  final VoidCallback? onTap;
+  final bool danger;
+  @override
+  Widget build(BuildContext context) => ListTile(
+    dense: true,
+    leading: CircleAvatar(
+      radius: 18,
+      backgroundColor: danger
+          ? const Color(0xFFFFEBEE)
+          : AppColors.primaryLight,
+      child: Icon(
+        icon,
+        size: 19,
+        color: danger ? AppColors.danger : AppColors.primary,
+      ),
+    ),
+    title: Text(
+      titre,
+      style: TextStyle(color: danger ? AppColors.danger : null),
+    ),
+    onTap: onTap,
+  );
 }
