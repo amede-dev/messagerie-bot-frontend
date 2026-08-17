@@ -48,6 +48,7 @@ class ConversationModel {
   }
 
   ConversationModel copyWith({
+    String? nom,
     MessageModel? dernierMessage,
     int? nombreNonLus,
     bool? enTrainDecrire,
@@ -56,7 +57,7 @@ class ConversationModel {
     return ConversationModel(
       id: id,
       type: type,
-      nom: nom,
+      nom: nom ?? this.nom,
       avatarInitiales: avatarInitiales,
       groupeLieId: groupeLieId,
       dernierMessage: dernierMessage ?? this.dernierMessage,

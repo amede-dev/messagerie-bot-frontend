@@ -48,29 +48,35 @@ class ConversationTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        conversation.nom,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight:
-                              estNonLu ? FontWeight.w700 : FontWeight.w500,
+                      Expanded(
+                        child: Text(
+                          conversation.nom,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: estNonLu
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                       if (conversation.dernierMessage != null)
-                        Text(
-                          DateFormat.Hm().format(
-                            conversation.dernierMessage!.dateEnvoi,
-                          ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: estNonLu
-                                ? AppColors.primary
-                                : AppColors.textMuted,
-                            fontWeight:
-                                estNonLu ? FontWeight.w700 : FontWeight.w400,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            DateFormat.Hm().format(
+                              conversation.dernierMessage!.dateEnvoi,
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: estNonLu
+                                  ? AppColors.primary
+                                  : AppColors.textMuted,
+                              fontWeight: estNonLu
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                            ),
                           ),
                         ),
                     ],

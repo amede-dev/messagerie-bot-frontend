@@ -97,6 +97,14 @@ class ConversationRepository {
     await _api.marquerStatut(messageId, 'LU');
   }
 
+  Future<void> ajouterParticipant(
+    String conversationId,
+    String utilisateurId,
+  ) async {
+    if (AppConfig.useMockBackend) return;
+    await _api.ajouterParticipant(conversationId, utilisateurId);
+  }
+
   Future<void> signalerMessage(String messageId, String motif) async {
     if (AppConfig.useMockBackend) return;
     await _api.signalerMessage(messageId, motif);

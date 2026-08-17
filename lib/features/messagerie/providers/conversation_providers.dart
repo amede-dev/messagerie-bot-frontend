@@ -65,6 +65,20 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
           .toList(),
     );
   }
+
+  void renommerConversation(String conversationId, String nom) {
+    final actuel = state.valueOrNull;
+    if (actuel == null) return;
+    state = AsyncData(
+      actuel
+          .map(
+            (conversation) => conversation.id == conversationId
+                ? conversation.copyWith(nom: nom)
+                : conversation,
+          )
+          .toList(),
+    );
+  }
 }
 
 // Historique + flux temps réel des messages d'une conversation ouverte.
