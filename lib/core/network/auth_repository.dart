@@ -15,12 +15,14 @@ class AuthRepository {
     required String prenom,
     required String email,
     required String motDePasse,
+    required String role,
   }) async {
     final response = await _api.inscrire(
       nom: nom,
       prenom: prenom,
       email: email,
       motDePasse: motDePasse,
+      role: role,
     );
     await _enregistrerToken(response.data);
   }
@@ -28,7 +30,14 @@ class AuthRepository {
   Future<void> _enregistrerToken(dynamic donnees) async {
     final token = donnees['token'] as String;
     await _storage.write(key: 'jwt_token', value: token);
+    await _storage.write(
+      key: 'utilisateur_id',
+      value: donnees['userId']?.toString(),
+    );
   }
+
+  Future<String?> idUtilisateurConnecte() =>
+      _storage.read(key: 'utilisateur_id');
 
   Future<bool> estConnecte() async {
     final token = await _storage.read(key: 'jwt_token');
@@ -37,5 +46,6 @@ class AuthRepository {
 
   Future<void> deconnexion() async {
     await _storage.delete(key: 'jwt_token');
+    await _storage.delete(key: 'utilisateur_id');
   }
 }

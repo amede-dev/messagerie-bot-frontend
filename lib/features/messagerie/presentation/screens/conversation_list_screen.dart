@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/network/auth_repository.dart';
@@ -30,8 +31,24 @@ class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
   final _rechercheController = TextEditingController();
   final _authRepository = AuthRepository();
+  final _stockage = const FlutterSecureStorage();
   String _recherche = '';
   bool _rechercheOuverte = false;
+  bool _uniAiMasque = false;
+
+  static const _cleUniAiMasque = 'uni_ai_masque';
+
+  @override
+  void initState() {
+    super.initState();
+    _chargerEtatUniAi();
+  }
+
+  Future<void> _chargerEtatUniAi() async {
+    final estMasque = await _stockage.read(key: _cleUniAiMasque) == 'true';
+    if (!mounted) return;
+    setState(() => _uniAiMasque = estMasque);
+  }
 
   @override
   void dispose() {
@@ -53,6 +70,65 @@ class _ConversationListScreenState
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const BotChatScreen()));
+  }
+
+  Future<void> _restaurerEtOuvrirUni() async {
+    if (_uniAiMasque) {
+      await _stockage.delete(key: _cleUniAiMasque);
+      if (!mounted) return;
+      setState(() => _uniAiMasque = false);
+    }
+    if (!mounted) return;
+    await _ouvrirUni();
+  }
+
+  Future<void> _ouvrirActionsUniAi() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusL),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+          title: const Text(
+            'Supprimer la conversation',
+            style: TextStyle(color: AppColors.danger),
+          ),
+          onTap: () => Navigator.of(context).pop('supprimer'),
+        ),
+      ),
+    );
+
+    if (action != 'supprimer' || !mounted) return;
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la conversation Uni AI ?'),
+        content: const Text(
+          'Uni AI sera retiré de votre liste. Vous pourrez le retrouver en appuyant sur son icône flottante.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirme != true || !mounted) return;
+    await _stockage.write(key: _cleUniAiMasque, value: 'true');
+    if (!mounted) return;
+    setState(() => _uniAiMasque = true);
   }
 
   Future<void> _demarrerConversationAvec(AppUserModel contact) async {
@@ -330,9 +406,7 @@ class _ConversationListScreenState
           ),
           Expanded(
             child: conversationsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -391,7 +465,7 @@ class _ConversationListScreenState
 
                 if (conversations.isEmpty &&
                     contactsFiltres.isEmpty &&
-                    !botCorrespond) {
+                    (!botCorrespond || _uniAiMasque)) {
                   return const Center(
                     child: Text('Aucun contact ou message trouvé'),
                   );
@@ -407,7 +481,7 @@ class _ConversationListScreenState
                   child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     children: [
-                      if (botCorrespond) ...[
+                      if (botCorrespond && !_uniAiMasque) ...[
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -421,6 +495,7 @@ class _ConversationListScreenState
                             'Assistant intelligent · toujours disponible',
                           ),
                           onTap: _ouvrirUni,
+                          onLongPress: _ouvrirActionsUniAi,
                         ),
                       ],
                       ...conversations.map(
@@ -491,7 +566,7 @@ class _ConversationListScreenState
               color: Colors.transparent,
               shape: const CircleBorder(),
               child: InkWell(
-                onTap: _ouvrirUni,
+                onTap: _restaurerEtOuvrirUni,
                 customBorder: const CircleBorder(),
                 child: const Padding(
                   padding: EdgeInsets.all(4),

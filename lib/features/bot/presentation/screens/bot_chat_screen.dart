@@ -84,7 +84,7 @@ class BotChatScreen extends ConsumerWidget {
                     },
                   ),
           ),
-          ChatInputBar(onSend: notifier.envoyer),
+          ChatInputBar(onSend: notifier.envoyer, afficherActionsMedia: false),
         ],
       ),
     );

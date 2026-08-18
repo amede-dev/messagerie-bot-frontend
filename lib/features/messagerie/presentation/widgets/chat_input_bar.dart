@@ -10,6 +10,7 @@ class ChatInputBar extends StatefulWidget {
   final VoidCallback? onTyping;
   final VoidCallback? onGalleryTap;
   final VoidCallback? onVoiceTap;
+  final bool afficherActionsMedia;
 
   const ChatInputBar({
     super.key,
@@ -17,6 +18,7 @@ class ChatInputBar extends StatefulWidget {
     this.onTyping,
     this.onGalleryTap,
     this.onVoiceTap,
+    this.afficherActionsMedia = true,
   });
 
   @override
@@ -40,22 +42,24 @@ class _ChatInputBarState extends State<ChatInputBar> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Row(
           children: [
-            IconButton(
-              tooltip: 'Galerie',
-              icon: const Icon(
-                Icons.photo_library_outlined,
-                color: AppColors.textMuted,
+            if (widget.afficherActionsMedia) ...[
+              IconButton(
+                tooltip: 'Galerie',
+                icon: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.textMuted,
+                ),
+                onPressed: widget.onGalleryTap,
               ),
-              onPressed: widget.onGalleryTap,
-            ),
-            IconButton(
-              tooltip: 'Message vocal',
-              icon: const Icon(
-                Icons.mic_none_outlined,
-                color: AppColors.textMuted,
+              IconButton(
+                tooltip: 'Message vocal',
+                icon: const Icon(
+                  Icons.mic_none_outlined,
+                  color: AppColors.textMuted,
+                ),
+                onPressed: widget.onVoiceTap,
               ),
-              onPressed: widget.onVoiceTap,
-            ),
+            ],
             Expanded(
               child: TextField(
                 controller: _controller,

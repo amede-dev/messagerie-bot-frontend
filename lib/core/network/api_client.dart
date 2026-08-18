@@ -49,6 +49,7 @@ class ApiClient {
     required String prenom,
     required String email,
     required String motDePasse,
+    required String role,
   }) => _dio.post(
     '/api/auth/register',
     data: {
@@ -56,6 +57,7 @@ class ApiClient {
       'prenom': prenom,
       'email': email,
       'motDePasse': motDePasse,
+      'role': role,
     },
   );
 
@@ -71,11 +73,13 @@ class ApiClient {
   Future<Response> creerConversation(Map<String, dynamic> payload) =>
       _dio.post('/api/conversations', data: payload);
 
-  Future<Response> ajouterParticipant(String conversationId, String userId) =>
-      _dio.post(
-        '/api/conversations/$conversationId/participants',
-        data: {'userId': userId},
-      );
+  Future<Response> ajouterParticipant(String conversationId, String userId) {
+    final idUtilisateur = int.tryParse(userId);
+    return _dio.post(
+      '/api/conversations/$conversationId/participants',
+      data: {'userId': idUtilisateur ?? userId},
+    );
+  }
 
   // ---- Messages ----
   Future<Response> envoyerMessageRest(Map<String, dynamic> payload) =>
@@ -89,6 +93,9 @@ class ApiClient {
 
   Future<Response> signalerMessage(String messageId, String motif) =>
       _dio.post('/api/messages/$messageId/report', data: {'motif': motif});
+
+  Future<Response> supprimerMessage(String messageId) =>
+      _dio.delete('/api/messages/$messageId');
 
   // ---- Bot ----
   Future<Response> envoyerMessageBot(String texte) =>

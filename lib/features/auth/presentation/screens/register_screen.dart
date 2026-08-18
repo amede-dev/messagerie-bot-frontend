@@ -25,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _chargement = false;
   bool _motDePasseVisible = false;
   String? _erreur;
+  String _role = 'ETUDIANT';
 
   @override
   void dispose() {
@@ -52,6 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prenom: _prenomController.text.trim(),
         email: _emailController.text.trim(),
         motDePasse: _motDePasseController.text,
+        role: _role,
       );
       await WebSocketService.instance.connect();
       if (!mounted) return;
@@ -102,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Vos informations permettent de créer votre profil étudiant.',
+                    'Choisissez votre rôle universitaire pour créer votre profil.',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 28),
@@ -136,6 +138,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (v) => v == null || !v.contains('@')
                         ? 'Saisissez une adresse e-mail valide.'
                         : null,
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    value: _role,
+                    decoration: decorationChamp(
+                      'Rôle universitaire',
+                      Icons.school_outlined,
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'ETUDIANT',
+                        child: Text('Étudiant'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ENSEIGNANT',
+                        child: Text('Enseignant'),
+                      ),
+                    ],
+                    onChanged: (role) {
+                      if (role != null) setState(() => _role = role);
+                    },
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
