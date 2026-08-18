@@ -41,9 +41,18 @@ class MessageModel {
         (s) => s.name.toUpperCase() == (json['statut'] as String? ?? 'ENVOYE'),
         orElse: () => MessageStatut.envoye,
       ),
-      dateEnvoi: DateTime.parse(json['dateEnvoi'] as String),
+      // Le backend Render enregistre actuellement les LocalDateTime en UTC
+      // sans suffixe de fuseau. On ajoute donc `Z` si nécessaire, puis on
+      // convertit vers le fuseau de l'appareil (Madagascar : UTC+3).
+      dateEnvoi: _dateLocaleDepuisApi(json['dateEnvoi'] as String),
       messageParentId: json['messageParentId']?.toString(),
     );
+  }
+
+  static DateTime _dateLocaleDepuisApi(String valeur) {
+    final contientFuseau = RegExp(r'(Z|[+-]\d{2}:?\d{2})$').hasMatch(valeur);
+    final date = DateTime.parse(contientFuseau ? valeur : '${valeur}Z');
+    return date.toLocal();
   }
 
   Map<String, dynamic> toJson() => {
