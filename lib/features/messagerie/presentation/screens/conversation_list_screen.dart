@@ -258,44 +258,6 @@ class _ConversationListScreenState
     );
   }
 
-  /// Menu "paramètres" ouvert via l'icône ⚙ en haut à droite.
-  Future<void> _ouvrirParametres() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusL),
-        ),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'Paramètres',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Se déconnecter',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {
-                Navigator.of(context).pop();
-                _seDeconnecter();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Choix "Nouvelle discussion" (1 à 1) ou "Nouveau groupe", accessible
   /// via le bouton flottant "+", à l'instar des applications de
   /// messagerie classiques.
@@ -372,9 +334,9 @@ class _ConversationListScreenState
             onPressed: _basculerRecherche,
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Paramètres',
-            onPressed: _ouvrirParametres,
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Se déconnecter',
+            onPressed: _seDeconnecter,
           ),
           const SizedBox(width: 4),
         ],
