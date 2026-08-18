@@ -109,6 +109,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 28),
                   TextFormField(
+                    controller: _nomController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: decorationChamp('Nom', Icons.badge_outlined),
+                    validator: _requis,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
                     controller: _prenomController,
                     style: styleTexteSaisi,
                     cursorColor: AppColors.primary,
@@ -117,14 +126,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: _requis,
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _nomController,
-                    style: styleTexteSaisi,
-                    cursorColor: AppColors.primary,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: decorationChamp('Nom', Icons.badge_outlined),
-                    validator: _requis,
-                  ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _emailController,
