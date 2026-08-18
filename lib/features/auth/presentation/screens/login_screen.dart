@@ -115,6 +115,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 24),
                           TextFormField(
                             controller: _emailController,
+                            style: styleTexteSaisi,
+                            cursorColor: AppColors.primary,
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.email],
                             decoration: decorationChamp(
@@ -128,6 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _motDePasseController,
+                            style: styleTexteSaisi,
+                            cursorColor: AppColors.primary,
                             obscureText: !_motDePasseVisible,
                             autofillHints: const [AutofillHints.password],
                             onFieldSubmitted: (_) => _seConnecter(),
@@ -215,6 +219,13 @@ class _LoginScreenState extends State<LoginScreen> {
 InputDecoration decorationChamp(String label, IconData icon) => InputDecoration(
   labelText: label,
   prefixIcon: Icon(icon),
+  prefixIconColor: AppColors.textMuted,
+  suffixIconColor: AppColors.textMuted,
+  labelStyle: const TextStyle(color: AppColors.textSecondary),
+  floatingLabelStyle: const TextStyle(
+    color: AppColors.primary,
+    fontWeight: FontWeight.w600,
+  ),
   filled: true,
   fillColor: const Color(0xFFF8FAFC),
   border: OutlineInputBorder(
@@ -226,6 +237,8 @@ InputDecoration decorationChamp(String label, IconData icon) => InputDecoration(
     borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
   ),
 );
+
+const styleTexteSaisi = TextStyle(color: AppColors.textPrimary, fontSize: 15);
 
 class _EnteteAuthentification extends StatelessWidget {
   const _EnteteAuthentification();

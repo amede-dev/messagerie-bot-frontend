@@ -108,6 +108,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 28),
                   TextFormField(
                     controller: _prenomController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
                     textCapitalization: TextCapitalization.words,
                     decoration: decorationChamp('Prénom', Icons.person_outline),
                     validator: _requis,
@@ -115,6 +117,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _nomController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
                     textCapitalization: TextCapitalization.words,
                     decoration: decorationChamp('Nom', Icons.badge_outlined),
                     validator: _requis,
@@ -122,6 +126,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _emailController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
                     keyboardType: TextInputType.emailAddress,
                     decoration: decorationChamp(
                       'Adresse e-mail',
@@ -134,6 +140,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _motDePasseController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
                     obscureText: !_motDePasseVisible,
                     decoration:
                         decorationChamp(
@@ -158,6 +166,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _confirmationController,
+                    style: styleTexteSaisi,
+                    cursorColor: AppColors.primary,
                     obscureText: !_motDePasseVisible,
                     decoration: decorationChamp(
                       'Confirmer le mot de passe',
