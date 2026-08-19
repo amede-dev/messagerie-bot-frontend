@@ -1,92 +1,327 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/models/conversation_model.dart';
 import '../../../core/models/app_user_model.dart';
+import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/network/websocket_service.dart';
 import '../data/conversation_repository.dart';
+
+import '../../../core/network/file_upload_service.dart';
+
+// =============================================================================
+// REPOSITORY
+// =============================================================================
 
 final conversationRepositoryProvider = Provider(
   (ref) => ConversationRepository(),
 );
 
-/// Annuaire affiché en haut de l'accueil, à la manière des contacts actifs
-/// dans les applications de messagerie. Les données viennent de `/api/users`.
+// =============================================================================
+// CONTACTS UNIVERSITAIRES
+// =============================================================================
+
 final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
   ref,
 ) async {
   final contacts = await ref.read(conversationRepositoryProvider).fetchUsers();
+
   contacts.sort(
     (a, b) => a.nomComplet.toLowerCase().compareTo(b.nomComplet.toLowerCase()),
   );
+
   return contacts;
 });
 
-/// Participants connus par le client pour les groupes créés pendant la session.
-/// Une API GET dédiée est nécessaire pour conserver cette liste après relance.
+// =============================================================================
+// PARTICIPANTS DES GROUPES
+// =============================================================================
+
 final participantsGroupesProvider =
     StateProvider<Map<String, List<AppUserModel>>>((ref) => {});
 
-/// Liste des conversations affichée sur l'écran d'accueil de la messagerie.
+// =============================================================================
+// LISTE DES CONVERSATIONS
+// =============================================================================
+
 final conversationListProvider =
     AsyncNotifierProvider<ConversationListNotifier, List<ConversationModel>>(
       ConversationListNotifier.new,
     );
 
 class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
+  StreamSubscription<MessageModel>? _messageSubscription;
+
+  StreamSubscription<PresenceModel>? _presenceSubscription;
+
+  // ===========================================================================
+  // TRI DES CONVERSATIONS
+  // ===========================================================================
+
+  List<ConversationModel> _trierConversations(
+    List<ConversationModel> conversations,
+  ) {
+    final resultat = List<ConversationModel>.from(conversations);
+
+    resultat.sort((a, b) {
+      final dateA = a.dernierMessage?.dateEnvoi;
+
+      final dateB = b.dernierMessage?.dateEnvoi;
+
+      if (dateA == null && dateB == null) {
+        return 0;
+      }
+
+      if (dateA == null) {
+        return 1;
+      }
+
+      if (dateB == null) {
+        return -1;
+      }
+
+      return dateB.compareTo(dateA);
+    });
+
+    return resultat;
+  }
+
+  // ===========================================================================
+  // BUILD
+  // ===========================================================================
+
   @override
   Future<List<ConversationModel>> build() async {
-    final repo = ref.read(conversationRepositoryProvider);
-    return repo.fetchConversations();
+    // -------------------------------------------------------------------------
+    // Écouter les nouveaux messages
+    // -------------------------------------------------------------------------
+
+    _messageSubscription ??= WebSocketService.instance.messageStream.listen(
+      _traiterNouveauMessage,
+    );
+
+    // -------------------------------------------------------------------------
+    // Écouter la présence
+    // -------------------------------------------------------------------------
+
+    _presenceSubscription ??= WebSocketService.instance.presenceStream.listen(
+      _traiterPresence,
+    );
+
+    // -------------------------------------------------------------------------
+    // Nettoyage
+    // -------------------------------------------------------------------------
+
+    ref.onDispose(() {
+      _messageSubscription?.cancel();
+      _presenceSubscription?.cancel();
+
+      _messageSubscription = null;
+      _presenceSubscription = null;
+    });
+
+    // -------------------------------------------------------------------------
+    // Charger les conversations
+    // -------------------------------------------------------------------------
+
+    final conversations = await ref
+        .read(conversationRepositoryProvider)
+        .fetchConversations();
+
+    return _trierConversations(conversations);
   }
+
+  // ===========================================================================
+  // RAFRAÎCHIR
+  // ===========================================================================
 
   Future<void> rafraichir() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(conversationRepositoryProvider).fetchConversations(),
-    );
+
+    state = await AsyncValue.guard(() async {
+      final conversations = await ref
+          .read(conversationRepositoryProvider)
+          .fetchConversations();
+
+      return _trierConversations(conversations);
+    });
   }
+
+  // ===========================================================================
+  // NOUVEAU MESSAGE REÇU
+  // ===========================================================================
+
+  void _traiterNouveauMessage(MessageModel message) {
+    final actuel = state.valueOrNull;
+
+    if (actuel == null) {
+      return;
+    }
+
+    final index = actuel.indexWhere(
+      (conversation) => conversation.id == message.conversationId,
+    );
+
+    if (index == -1) {
+      rafraichir();
+      return;
+    }
+
+    final conversation = actuel[index];
+
+    if (conversation.dernierMessage?.id == message.id) {
+      return;
+    }
+
+    final dernier = conversation.dernierMessage;
+
+    if (dernier != null && message.dateEnvoi.isBefore(dernier.dateEnvoi)) {
+      return;
+    }
+
+    var nombreNonLus = conversation.nombreNonLus;
+
+    if (message.statut == MessageStatut.recu) {
+      nombreNonLus++;
+    }
+
+    final conversationMiseAJour = conversation.copyWith(
+      dernierMessage: message,
+      nombreNonLus: nombreNonLus,
+    );
+
+    final nouvelleListe = List<ConversationModel>.from(actuel);
+
+    nouvelleListe[index] = conversationMiseAJour;
+
+    // Le nouveau message place la conversation
+    // en première position.
+    state = AsyncData(_trierConversations(nouvelleListe));
+  }
+
+  // ===========================================================================
+  // PRÉSENCE
+  // ===========================================================================
+
+  void _traiterPresence(PresenceModel presence) {
+    final actuel = state.valueOrNull;
+
+    if (actuel == null) {
+      return;
+    }
+
+    final nouvelleListe = actuel.map((conversation) {
+      // ---------------------------------------------------------------------
+      // Les groupes ne sont pas concernés
+      // par la présence individuelle.
+      // ---------------------------------------------------------------------
+
+      if (conversation.type != ConversationType.privee) {
+        return conversation;
+      }
+
+      // ---------------------------------------------------------------------
+      // Vérifier que cette conversation
+      // correspond à l'utilisateur concerné.
+      // ---------------------------------------------------------------------
+
+      if (conversation.utilisateurId != presence.utilisateurId) {
+        return conversation;
+      }
+
+      // ---------------------------------------------------------------------
+      // Mettre à jour la présence.
+      // ---------------------------------------------------------------------
+      return ConversationModel(
+        id: conversation.id,
+        type: conversation.type,
+        nom: conversation.nom,
+        avatarInitiales: conversation.avatarInitiales,
+        groupeLieId: conversation.groupeLieId,
+        dernierMessage: conversation.dernierMessage,
+        nombreNonLus: conversation.nombreNonLus,
+        enTrainDecrire: conversation.enTrainDecrire,
+
+        utilisateurId: conversation.utilisateurId,
+
+        estEnLigne: presence.enLigne,
+
+        derniereConnexion: presence.derniereConnexion,
+      );
+    }).toList();
+
+    state = AsyncData(_trierConversations(nouvelleListe));
+  }
+
+  // ===========================================================================
+  // RETIRER UNE CONVERSATION
+  // ===========================================================================
 
   void retirerConversation(String conversationId) {
     final actuel = state.valueOrNull;
-    if (actuel == null) return;
-    state = AsyncData(actuel.where((c) => c.id != conversationId).toList());
+
+    if (actuel == null) {
+      return;
+    }
+
+    final nouvelleListe = actuel
+        .where((conversation) => conversation.id != conversationId)
+        .toList();
+
+    state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  /// Retire immédiatement l'indicateur de non-lus lorsque la discussion est
-  /// ouverte. Le serveur reste la source de vérité après le rafraîchissement.
+  // ===========================================================================
+  // MARQUER COMME LUE
+  // ===========================================================================
+
   void marquerConversationLue(String conversationId) {
     final actuel = state.valueOrNull;
-    if (actuel == null) return;
-    state = AsyncData(
-      actuel
-          .map(
-            (conversation) => conversation.id == conversationId
-                ? conversation.copyWith(nombreNonLus: 0)
-                : conversation,
-          )
-          .toList(),
-    );
+
+    if (actuel == null) {
+      return;
+    }
+
+    final nouvelleListe = actuel
+        .map(
+          (conversation) => conversation.id == conversationId
+              ? conversation.copyWith(nombreNonLus: 0)
+              : conversation,
+        )
+        .toList();
+
+    state = AsyncData(_trierConversations(nouvelleListe));
   }
+
+  // ===========================================================================
+  // RENOMMER
+  // ===========================================================================
 
   void renommerConversation(String conversationId, String nom) {
     final actuel = state.valueOrNull;
-    if (actuel == null) return;
-    state = AsyncData(
-      actuel
-          .map(
-            (conversation) => conversation.id == conversationId
-                ? conversation.copyWith(nom: nom)
-                : conversation,
-          )
-          .toList(),
-    );
+
+    if (actuel == null) {
+      return;
+    }
+
+    final nouvelleListe = actuel
+        .map(
+          (conversation) => conversation.id == conversationId
+              ? conversation.copyWith(nom: nom)
+              : conversation,
+        )
+        .toList();
+
+    state = AsyncData(_trierConversations(nouvelleListe));
   }
 }
 
-// Historique + flux temps réel des messages d'une conversation ouverte.
+// =============================================================================
+// MESSAGES D'UNE CONVERSATION
+// =============================================================================
+
 final chatMessagesProvider =
     AsyncNotifierProvider.family<
       ChatMessagesNotifier,
@@ -96,24 +331,67 @@ final chatMessagesProvider =
 
 class ChatMessagesNotifier
     extends FamilyAsyncNotifier<List<MessageModel>, String> {
+  StreamSubscription<MessageModel>? _messageSubscription;
+
+  // ===========================================================================
+  // BUILD
+  // ===========================================================================
+
   @override
   Future<List<MessageModel>> build(String conversationId) async {
     WebSocketService.instance.subscribeToConversation(conversationId);
-    WebSocketService.instance.messageStream.listen((message) {
+
+    _messageSubscription = WebSocketService.instance.messageStream.listen((
+      message,
+    ) {
       if (message.conversationId == conversationId) {
         _ajouterMessage(message);
       }
     });
 
+    ref.onDispose(() {
+      _messageSubscription?.cancel();
+      _messageSubscription = null;
+    });
+
     final repo = ref.read(conversationRepositoryProvider);
+
     final historique = await repo.fetchMessages(conversationId);
+
     return historique;
   }
 
+  // ===========================================================================
+  // AJOUTER UN MESSAGE
+  // ===========================================================================
+
   void _ajouterMessage(MessageModel message) {
     final actuel = state.valueOrNull ?? [];
+
+    final existeDeja = actuel.any((m) => m.id == message.id);
+
+    if (existeDeja) {
+      return;
+    }
+
     state = AsyncData([...actuel, message]);
   }
+
+  // ===========================================================================
+  // SUPPRIMER LOCALEMENT
+  // ===========================================================================
+
+  void supprimerMessageLocalement(String messageId) {
+    final actuel = state.valueOrNull ?? const <MessageModel>[];
+
+    state = AsyncData(
+      actuel.where((message) => message.id != messageId).toList(),
+    );
+  }
+
+  // ===========================================================================
+  // ENVOYER
+  // ===========================================================================
 
   void envoyer(String texte) {
     WebSocketService.instance.envoyerMessage(
@@ -123,21 +401,29 @@ class ChatMessagesNotifier
     );
   }
 
-  /// Les messages au statut « reçu » deviennent lus dès que la conversation
-  /// est affichée. Les messages envoyés par l'utilisateur ne sont pas touchés.
+  // ===========================================================================
+  // MARQUER LU
+  // ===========================================================================
+
   Future<void> marquerMessagesRecusCommeLus() async {
     final messagesRecus = (state.valueOrNull ?? const <MessageModel>[])
         .where((message) => message.statut == MessageStatut.recu)
         .toList();
-    if (messagesRecus.isEmpty) return;
+
+    if (messagesRecus.isEmpty) {
+      return;
+    }
 
     final repo = ref.read(conversationRepositoryProvider);
+
     await Future.wait(
       messagesRecus.map((message) => repo.marquerMessageLu(message.id)),
     );
 
     final idsLus = messagesRecus.map((message) => message.id).toSet();
+
     final actuel = state.valueOrNull ?? const <MessageModel>[];
+
     state = AsyncData(
       actuel
           .map(
@@ -149,14 +435,40 @@ class ChatMessagesNotifier
     );
   }
 
-  // Envoie une pièce jointe (image ou document) choisie via le bottom sheet.
-  void envoyerPieceJointe(File fichier, {required bool estImage}) {
-    WebSocketService.instance.envoyerMessage(
-      conversationId: arg,
-      contenu: fichier.path,
-      type: estImage ? MessageType.image : MessageType.document,
-    );
+  // ===========================================================================
+  // PIÈCE JOINTE
+  // ===========================================================================
+
+  Future<void> envoyerFichier(File fichier, MessageType type) async {
+    try {
+      // ========================================================================
+      // 1. UPLOAD DU FICHIER
+      // ========================================================================
+
+      final fichierEnvoye = await FileUploadService.instance.upload(fichier);
+
+      // ========================================================================
+      // 2. ENVOYER L'URL VIA WEBSOCKET
+      // ========================================================================
+
+      await WebSocketService.instance.envoyerMessage(
+        conversationId: arg,
+
+        // IMPORTANT :
+        // On n'envoie plus fichier.path.
+        // On envoie l'URL du serveur.
+        contenu: fichierEnvoye.url,
+
+        type: type,
+      );
+    } catch (e) {
+      print('Erreur envoi fichier: $e');
+    }
   }
+
+  // ===========================================================================
+  // EN TRAIN D'ÉCRIRE
+  // ===========================================================================
 
   void notifierFrappe() {
     WebSocketService.instance.notifierEnTrainDecrire(arg);

@@ -48,6 +48,10 @@ dependencies:
   intl: ^0.19.0                  # formatage des heures/dates dans le chat
   uuid: ^4.4.0                   # génération d'identifiants locaux (messages optimistes)
 
+  record: ^6.0.0
+  audioplayers: ^6.1.0
+  video_player: ^2.9.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

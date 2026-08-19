@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../core/models/app_user_model.dart';
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/network/auth_repository.dart';
-import '../../../../core/models/app_user_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../../../shared/widgets/uni_logo.dart';
@@ -16,9 +15,11 @@ import 'chat_screen.dart';
 import 'contact_list_screen.dart';
 import 'new_conversation_screen.dart';
 
-// Écran d'accueil du module Messagerie, calqué sur la disposition de
-// Messenger : "Messages" à gauche, logo Uni + recherche + paramètres à
-// droite, bouton flottant "+" pour démarrer une discussion ou un groupe.
+/// Écran principal de la messagerie.
+///
+/// Uni AI n'est pas affiché dans la liste des conversations.
+/// Il est accessible uniquement par son bouton flottant,
+/// placé juste au-dessus du bouton "+".
 class ConversationListScreen extends ConsumerStatefulWidget {
   const ConversationListScreen({super.key});
 
@@ -31,24 +32,13 @@ class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
   final _rechercheController = TextEditingController();
   final _authRepository = AuthRepository();
-  final _stockage = const FlutterSecureStorage();
+
   String _recherche = '';
   bool _rechercheOuverte = false;
-  bool _uniAiMasque = false;
 
-  static const _cleUniAiMasque = 'uni_ai_masque';
-
-  @override
-  void initState() {
-    super.initState();
-    _chargerEtatUniAi();
-  }
-
-  Future<void> _chargerEtatUniAi() async {
-    final estMasque = await _stockage.read(key: _cleUniAiMasque) == 'true';
-    if (!mounted) return;
-    setState(() => _uniAiMasque = estMasque);
-  }
+  // ===========================================================================
+  // INITIALISATION
+  // ===========================================================================
 
   @override
   void dispose() {
@@ -56,9 +46,14 @@ class _ConversationListScreenState
     super.dispose();
   }
 
+  // ===========================================================================
+  // RECHERCHE
+  // ===========================================================================
+
   void _basculerRecherche() {
     setState(() {
       _rechercheOuverte = !_rechercheOuverte;
+
       if (!_rechercheOuverte) {
         _rechercheController.clear();
         _recherche = '';
@@ -66,90 +61,147 @@ class _ConversationListScreenState
     });
   }
 
+  // ===========================================================================
+  // UNI AI
+  // ===========================================================================
+
+  /// Ouvre directement la conversation avec Uni AI.
+  ///
+  /// Uni AI n'est PAS ajouté à la liste des conversations.
   Future<void> _ouvrirUni() async {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const BotChatScreen()));
   }
 
-  Future<void> _restaurerEtOuvrirUni() async {
-    if (_uniAiMasque) {
-      await _stockage.delete(key: _cleUniAiMasque);
-      if (!mounted) return;
-      setState(() => _uniAiMasque = false);
-    }
-    if (!mounted) return;
-    await _ouvrirUni();
-  }
+  // ===========================================================================
+  // MENU DU BOUTON +
+  // ===========================================================================
 
-  Future<void> _ouvrirActionsUniAi() async {
-    final action = await showModalBottomSheet<String>(
+  /// Le bouton "+" permet uniquement de créer :
+  ///
+  /// - une nouvelle discussion privée
+  /// - un nouveau groupe
+  ///
+  /// Uni AI est volontairement absent de ce menu.
+  Future<void> _ouvrirMenuNouvelleConversation() async {
+    final choix = await showModalBottomSheet<String>(
       context: context,
-      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppTheme.radiusL),
         ),
       ),
-      builder: (context) => SafeArea(
-        child: ListTile(
-          leading: const Icon(Icons.delete_outline, color: AppColors.danger),
-          title: const Text(
-            'Supprimer la conversation',
-            style: TextStyle(color: AppColors.danger),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ---------------------------------------------------------------
+              // TITRE
+              // ---------------------------------------------------------------
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Nouveau',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                ),
+              ),
+
+              // ---------------------------------------------------------------
+              // NOUVELLE DISCUSSION PRIVÉE
+              // ---------------------------------------------------------------
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Nouvelle discussion'),
+                subtitle: const Text('Choisir un contact dans l\'annuaire'),
+                onTap: () {
+                  Navigator.of(context).pop('privee');
+                },
+              ),
+
+              // ---------------------------------------------------------------
+              // NOUVEAU GROUPE
+              // ---------------------------------------------------------------
+              ListTile(
+                leading: const Icon(Icons.group_outlined),
+                title: const Text('Nouveau groupe'),
+                subtitle: const Text('Plusieurs participants à la fois'),
+                onTap: () {
+                  Navigator.of(context).pop('groupe');
+                },
+              ),
+
+              const SizedBox(height: 8),
+            ],
           ),
-          onTap: () => Navigator.of(context).pop('supprimer'),
-        ),
-      ),
+        );
+      },
     );
 
-    if (action != 'supprimer' || !mounted) return;
-    final confirme = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer la conversation Uni AI ?'),
-        content: const Text(
-          'Uni AI sera retiré de votre liste. Vous pourrez le retrouver en appuyant sur son icône flottante.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
+    if (choix == null || !mounted) {
+      return;
+    }
 
-    if (confirme != true || !mounted) return;
-    await _stockage.write(key: _cleUniAiMasque, value: 'true');
-    if (!mounted) return;
-    setState(() => _uniAiMasque = true);
+    // -------------------------------------------------------------------------
+    // NOUVELLE DISCUSSION PRIVÉE
+    // -------------------------------------------------------------------------
+
+    if (choix == 'privee') {
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
+
+      return;
+    }
+
+    // -------------------------------------------------------------------------
+    // NOUVEAU GROUPE
+    // -------------------------------------------------------------------------
+
+    if (choix == 'groupe') {
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen()));
+    }
   }
+
+  // ===========================================================================
+  // DÉMARRER UNE DISCUSSION AVEC UN CONTACT
+  // ===========================================================================
 
   Future<void> _demarrerConversationAvec(AppUserModel contact) async {
     try {
       final conversation = await ref
           .read(conversationRepositoryProvider)
           .creerConversationPrivee(contact.id);
+
+      // Rafraîchir la liste après création.
       await ref.read(conversationListProvider.notifier).rafraichir();
-      if (!mounted) return;
+
+      if (!mounted) {
+        return;
+      }
+
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => ChatScreen(conversation: conversation),
         ),
       );
     } catch (erreur) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Impossible d’ouvrir la discussion : $erreur')),
       );
     }
   }
+
+  // ===========================================================================
+  // ACTIONS SUR UNE CONVERSATION
+  // ===========================================================================
 
   Future<void> _ouvrirActionsConversation(
     ConversationModel conversation,
@@ -162,59 +214,80 @@ class _ConversationListScreenState
           top: Radius.circular(AppTheme.radiusL),
         ),
       ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(
-                Icons.delete_outline,
-                color: AppColors.danger,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.danger,
+                ),
+                title: const Text(
+                  'Supprimer la conversation',
+                  style: TextStyle(color: AppColors.danger),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop('supprimer');
+                },
               ),
-              title: const Text(
-                'Supprimer la conversation',
-                style: TextStyle(color: AppColors.danger),
-              ),
-              onTap: () => Navigator.of(context).pop('supprimer'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
 
-    if (action != 'supprimer' || !mounted) return;
+    if (action != 'supprimer' || !mounted) {
+      return;
+    }
+
     final confirme = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer la conversation ?'),
-        content: Text(
-          'La conversation avec « ${conversation.nom} » sera retirée de votre liste.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Supprimer la conversation ?'),
+          content: Text(
+            'La conversation avec « ${conversation.nom} » '
+            'sera retirée de votre liste.',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
     );
 
-    if (confirme != true || !mounted) return;
+    if (confirme != true || !mounted) {
+      return;
+    }
+
     try {
       await ref
           .read(conversationRepositoryProvider)
           .quitterConversation(conversation.id);
+
       ref
           .read(conversationListProvider.notifier)
           .retirerConversation(conversation.id);
     } catch (erreur) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Impossible de supprimer la conversation : $erreur'),
@@ -223,171 +296,121 @@ class _ConversationListScreenState
     }
   }
 
+  // ===========================================================================
+  // DÉCONNEXION
+  // ===========================================================================
+
   Future<void> _seDeconnecter() async {
     final confirme = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Se déconnecter ?'),
-        content: const Text(
-          'Tu devras te reconnecter pour accéder à tes conversations.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Se déconnecter ?'),
+          content: const Text(
+            'Tu devras te reconnecter pour accéder à tes conversations.',
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Se déconnecter',
-              style: TextStyle(color: Colors.red),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Annuler'),
             ),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text(
+                'Se déconnecter',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
-    if (confirme != true || !mounted) return;
+    if (confirme != true || !mounted) {
+      return;
+    }
 
     await _authRepository.deconnexion();
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
 
-  /// Menu "paramètres" ouvert via l'icône ⚙ en haut à droite.
-  Future<void> _ouvrirParametres() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusL),
-        ),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'Paramètres',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Se déconnecter',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {
-                Navigator.of(context).pop();
-                _seDeconnecter();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Choix "Nouvelle discussion" (1 à 1) ou "Nouveau groupe", accessible
-  /// via le bouton flottant "+", à l'instar des applications de
-  /// messagerie classiques.
-  Future<void> _ouvrirMenuNouvelleConversation() async {
-    final choix = await showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusL),
-        ),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'Nouveau',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Nouvelle discussion'),
-              subtitle: const Text('Choisir un contact dans l\'annuaire'),
-              onTap: () => Navigator.of(context).pop('privee'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.group_outlined),
-              title: const Text('Nouveau groupe'),
-              subtitle: const Text('Plusieurs participants à la fois'),
-              onTap: () => Navigator.of(context).pop('groupe'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-
-    if (choix == null || !mounted) return;
-    if (choix == 'privee') {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
-    } else {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen()));
-    }
-  }
+  // ===========================================================================
+  // BUILD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationListProvider);
+
     final contactsAsync = ref.watch(contactsUniversitairesProvider);
-    const nomBot = 'Uni AI';
-    final botCorrespond = nomBot.toLowerCase().contains(
-      _recherche.toLowerCase(),
-    );
 
     return Scaffold(
+      // ========================================================================
+      // APP BAR
+      // ========================================================================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 16,
+
         title: const Text(
           'Messages',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
         ),
+
         actions: [
+          // ---------------------------------------------------------------
+          // RECHERCHE
+          // ---------------------------------------------------------------
           IconButton(
             icon: Icon(_rechercheOuverte ? Icons.close : Icons.search),
             tooltip: 'Rechercher',
             onPressed: _basculerRecherche,
           ),
+
+          // ---------------------------------------------------------------
+          // DÉCONNEXION
+          // ---------------------------------------------------------------
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Paramètres',
-            onPressed: _ouvrirParametres,
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Se déconnecter',
+            onPressed: _seDeconnecter,
           ),
+
           const SizedBox(width: 4),
         ],
       ),
+
+      // ========================================================================
+      // BODY
+      // ========================================================================
       body: Column(
         children: [
+          // ---------------------------------------------------------------------
+          // BARRE DE RECHERCHE
+          // ---------------------------------------------------------------------
           if (_rechercheOuverte)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TextField(
                 controller: _rechercheController,
                 autofocus: true,
-                onChanged: (val) => setState(() => _recherche = val),
+                onChanged: (val) {
+                  setState(() {
+                    _recherche = val;
+                  });
+                },
                 decoration: InputDecoration(
                   hintText: 'Rechercher',
                   prefixIcon: const Icon(Icons.search),
@@ -400,59 +423,103 @@ class _ConversationListScreenState
                 ),
               ),
             ),
+
+          // ---------------------------------------------------------------------
+          // CONTACTS RAPIDES
+          // ---------------------------------------------------------------------
           _ContactsRapides(
             contactsAsync: contactsAsync,
             onContactTap: _demarrerConversationAvec,
           ),
+
+          // ---------------------------------------------------------------------
+          // LISTE DES CONVERSATIONS
+          // ---------------------------------------------------------------------
           Expanded(
             child: conversationsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Impossible de charger les conversations.',
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '$err',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11,
+              // =================================================================
+              // CHARGEMENT
+              // =================================================================
+              loading: () {
+                return const Center(child: CircularProgressIndicator());
+              },
+
+              // =================================================================
+              // ERREUR
+              // =================================================================
+              error: (err, _) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.cloud_off,
+                          size: 48,
                           color: Colors.grey,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () => ref
-                            .read(conversationListProvider.notifier)
-                            .rafraichir(),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Réessayer'),
-                      ),
-                    ],
+
+                        const SizedBox(height: 12),
+
+                        const Text(
+                          'Impossible de charger les conversations.',
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          '$err',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        FilledButton.icon(
+                          onPressed: () {
+                            ref
+                                .read(conversationListProvider.notifier)
+                                .rafraichir();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Réessayer'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
+
+              // =================================================================
+              // DONNÉES
+              // =================================================================
               data: (conversationsBrutes) {
+                // -----------------------------------------------------------------
+                // FILTRAGE DES CONVERSATIONS
+                // -----------------------------------------------------------------
+
                 final conversations = _recherche.isEmpty
                     ? conversationsBrutes
                     : conversationsBrutes
                           .where(
-                            (c) => c.nom.toLowerCase().contains(
-                              _recherche.toLowerCase(),
-                            ),
+                            (conversation) => conversation.nom
+                                .toLowerCase()
+                                .contains(_recherche.toLowerCase()),
                           )
                           .toList();
 
+                // -----------------------------------------------------------------
+                // CONTACTS
+                // -----------------------------------------------------------------
+
                 final contacts =
                     contactsAsync.valueOrNull ?? const <AppUserModel>[];
+
                 final contactsFiltres = _recherche.isEmpty
                     ? contacts
                     : contacts
@@ -463,58 +530,71 @@ class _ConversationListScreenState
                           )
                           .toList();
 
-                if (conversations.isEmpty &&
-                    contactsFiltres.isEmpty &&
-                    (!botCorrespond || _uniAiMasque)) {
+                // -----------------------------------------------------------------
+                // AUCUN RÉSULTAT
+                // -----------------------------------------------------------------
+
+                if (conversations.isEmpty && contactsFiltres.isEmpty) {
                   return const Center(
                     child: Text('Aucun contact ou message trouvé'),
                   );
                 }
 
+                // -----------------------------------------------------------------
+                // LISTE
+                // -----------------------------------------------------------------
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(contactsUniversitairesProvider);
+
                     await ref
                         .read(conversationListProvider.notifier)
                         .rafraichir();
                   },
+
                   child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 8),
+
                     children: [
-                      if (botCorrespond && !_uniAiMasque) ...[
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                          ),
-                          leading: const UniLogo(size: 42),
-                          title: const Text(
-                            nomBot,
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: const Text(
-                            'Assistant intelligent · toujours disponible',
-                          ),
-                          onTap: _ouvrirUni,
-                          onLongPress: _ouvrirActionsUniAi,
-                        ),
-                      ],
-                      ...conversations.map(
-                        (conversation) => Column(
+                      // ===========================================================
+                      // IMPORTANT :
+                      //
+                      // Il n'y a PLUS de ListTile Uni AI ici.
+                      //
+                      // Uni AI est uniquement le bouton flottant
+                      // au-dessus du bouton "+".
+                      // ===========================================================
+
+                      // ===========================================================
+                      // CONVERSATIONS
+                      // ===========================================================
+                      ...conversations.map((conversation) {
+                        return Column(
                           children: [
                             ConversationTile(
                               conversation: conversation,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ChatScreen(conversation: conversation),
-                                ),
-                              ),
-                              onLongPress: () =>
-                                  _ouvrirActionsConversation(conversation),
+
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ChatScreen(conversation: conversation),
+                                  ),
+                                );
+                              },
+
+                              onLongPress: () {
+                                _ouvrirActionsConversation(conversation);
+                              },
                             ),
                           ],
-                        ),
-                      ),
+                        );
+                      }),
+
+                      // ===========================================================
+                      // TOUS LES CONTACTS
+                      // ===========================================================
                       if (contactsFiltres.isNotEmpty) ...[
                         const Padding(
                           padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
@@ -526,26 +606,32 @@ class _ConversationListScreenState
                             ),
                           ),
                         ),
-                        ...contactsFiltres.map(
-                          (contact) => Column(
+
+                        ...contactsFiltres.map((contact) {
+                          return Column(
                             children: [
                               ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
+
                                 leading: AvatarCircle(
                                   initiales: contact.initiales,
                                 ),
+
                                 title: Text(
                                   contact.nomComplet,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                onTap: () => _demarrerConversationAvec(contact),
+
+                                onTap: () {
+                                  _demarrerConversationAvec(contact);
+                                },
                               ),
                             ],
-                          ),
-                        ),
+                          );
+                        }),
                       ],
                     ],
                   ),
@@ -555,19 +641,34 @@ class _ConversationListScreenState
           ),
         ],
       ),
-      // L'assistant Uni AI est placé juste au-dessus du bouton de création,
-      // comme les assistants des applications de messagerie modernes.
+
+      // ========================================================================
+      // BOUTONS FLOTTANTS
+      // ========================================================================
+      //
+      //                    ✨
+      //                 Uni AI
+      //                    │
+      //                    ↓
+      //                   (+)
+      //
+      // Uni AI est complètement séparé du bouton "+".
+      // ========================================================================
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // ====================================================================
+          // BOUTON UNI AI
+          // ====================================================================
           Tooltip(
             message: 'Ouvrir Uni AI',
             child: Material(
               color: Colors.transparent,
               shape: const CircleBorder(),
               child: InkWell(
-                onTap: _restaurerEtOuvrirUni,
+                onTap: _ouvrirUni,
                 customBorder: const CircleBorder(),
+
                 child: const Padding(
                   padding: EdgeInsets.all(4),
                   child: UniLogo(size: 48),
@@ -575,11 +676,18 @@ class _ConversationListScreenState
               ),
             ),
           ),
+
           const SizedBox(height: 12),
+
+          // ====================================================================
+          // BOUTON +
+          // ====================================================================
           FloatingActionButton(
+            heroTag: 'new_conversation_button',
             onPressed: _ouvrirMenuNouvelleConversation,
             backgroundColor: AppColors.primary,
             shape: const CircleBorder(),
+
             child: const Icon(Icons.add, color: Colors.white, size: 28),
           ),
         ],
@@ -588,6 +696,10 @@ class _ConversationListScreenState
   }
 }
 
+// =============================================================================
+// CONTACTS RAPIDES
+// =============================================================================
+
 class _ContactsRapides extends StatelessWidget {
   const _ContactsRapides({
     required this.contactsAsync,
@@ -595,53 +707,88 @@ class _ContactsRapides extends StatelessWidget {
   });
 
   final AsyncValue<List<AppUserModel>> contactsAsync;
+
   final ValueChanged<AppUserModel> onContactTap;
 
   @override
   Widget build(BuildContext context) {
     return contactsAsync.when(
-      loading: () => const SizedBox(
-        height: 98,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
+      // -------------------------------------------------------------------------
+      // CHARGEMENT
+      // -------------------------------------------------------------------------
+      loading: () {
+        return const SizedBox(
+          height: 98,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      },
+
+      // -------------------------------------------------------------------------
+      // ERREUR
+      // -------------------------------------------------------------------------
+      error: (_, __) {
+        return const SizedBox.shrink();
+      },
+
+      // -------------------------------------------------------------------------
+      // DONNÉES
+      // -------------------------------------------------------------------------
       data: (contacts) {
-        if (contacts.isEmpty) return const SizedBox.shrink();
+        if (contacts.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
         return SizedBox(
           height: 108,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 4, 16, 6),
+
                 child: Text(
                   'Contacts',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
+
               Expanded(
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
+
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+
                   itemCount: contacts.length,
+
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
+
                   itemBuilder: (context, index) {
                     final contact = contacts[index];
+
                     final prenom = contact.prenom.trim().isEmpty
                         ? contact.nomComplet
                         : contact.prenom.trim();
+
                     return SizedBox(
                       width: 58,
+
                       child: InkWell(
                         borderRadius: BorderRadius.circular(32),
-                        onTap: () => onContactTap(contact),
+
+                        onTap: () {
+                          onContactTap(contact);
+                        },
+
                         child: Column(
                           children: [
                             AvatarCircle(
                               initiales: contact.initiales,
                               size: 50,
                             ),
+
                             const SizedBox(height: 4),
+
                             Text(
                               prenom,
                               maxLines: 1,
@@ -656,6 +803,7 @@ class _ContactsRapides extends StatelessWidget {
                   },
                 ),
               ),
+
               const Divider(height: 1),
             ],
           ),

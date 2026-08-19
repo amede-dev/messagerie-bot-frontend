@@ -110,6 +110,11 @@ class ConversationRepository {
     await _api.signalerMessage(messageId, motif);
   }
 
+  Future<void> supprimerMessagePourTous(String messageId) async {
+    if (AppConfig.useMockBackend) return;
+    await _api.supprimerMessage(messageId);
+  }
+
   Future<void> bloquerUtilisateur(String userId) async {
     if (AppConfig.useMockBackend) return;
     await _api.bloquerUtilisateur(userId);

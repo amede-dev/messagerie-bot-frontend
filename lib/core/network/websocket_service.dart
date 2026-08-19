@@ -7,121 +7,323 @@ import 'package:stomp_dart_client/stomp_dart_client.dart';
 import '../config/app_config.dart';
 import '../models/message_model.dart';
 
+class PresenceModel {
+  final String utilisateurId;
+  final bool enLigne;
+  final DateTime? derniereConnexion;
+
+  const PresenceModel({
+    required this.utilisateurId,
+    required this.enLigne,
+    this.derniereConnexion,
+  });
+
+  factory PresenceModel.fromJson(Map<String, dynamic> json) {
+    return PresenceModel(
+      utilisateurId: json['utilisateurId'].toString(),
+
+      enLigne: json['enLigne'] == true,
+
+      derniereConnexion: json['derniereConnexion'] != null
+          ? DateTime.tryParse(json['derniereConnexion'].toString())
+          : null,
+    );
+  }
+}
+
+/// ============================================================================
+/// WEBSOCKET SERVICE
+/// ============================================================================
+
 class WebSocketService {
   WebSocketService._internal();
+
   static final WebSocketService instance = WebSocketService._internal();
 
   StompClient? _client;
+
   final _storage = const FlutterSecureStorage();
 
+  // ==========================================================================
+  // STREAM DES MESSAGES
+  // ==========================================================================
+
   final _messageController = StreamController<MessageModel>.broadcast();
-  final _typingController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<MessageModel> get messageStream => _messageController.stream;
+
+  // ==========================================================================
+  // STREAM "EN TRAIN D'ÉCRIRE"
+  // ==========================================================================
+
+  final _typingController = StreamController<Map<String, dynamic>>.broadcast();
+
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
 
+  // ==========================================================================
+  // STREAM DE PRÉSENCE
+  // ==========================================================================
+
+  final _presenceController = StreamController<PresenceModel>.broadcast();
+
+  Stream<PresenceModel> get presenceStream => _presenceController.stream;
+
+  // ==========================================================================
+  // ÉTAT DE CONNEXION
+  // ==========================================================================
+
   Completer<void> _connectedCompleter = Completer<void>();
+
   bool _isConnected = false;
 
+  // ==========================================================================
+  // CONNECTER LE WEBSOCKET
+  // ==========================================================================
+
   Future<void> connect() async {
-    if (AppConfig.useMockBackend) return;
+    // ------------------------------------------------------------------------
+    // Mode mock
+    // ------------------------------------------------------------------------
+
+    if (AppConfig.useMockBackend) {
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // Récupérer le JWT
+    // ------------------------------------------------------------------------
 
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+
+    if (token == null) {
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // Réinitialiser le Completer
+    // ------------------------------------------------------------------------
 
     if (_connectedCompleter.isCompleted) {
       _connectedCompleter = Completer<void>();
     }
+
     _isConnected = false;
+
+    // ------------------------------------------------------------------------
+    // Créer le client STOMP
+    // ------------------------------------------------------------------------
 
     _client = StompClient(
       config: StompConfig(
         url: AppConfig.wsBaseUrl,
+
+        // JWT envoyé au backend
         stompConnectHeaders: {'Authorization': 'Bearer $token'},
+
+        // Connexion réussie
         onConnect: _onConnect,
+
+        // Déconnexion
         onDisconnect: (frame) {
           _isConnected = false;
+
           if (_connectedCompleter.isCompleted) {
             _connectedCompleter = Completer<void>();
           }
         },
-        onWebSocketError: (error) => print('Erreur WebSocket: $error'),
-        onStompError: (frame) => print('Erreur STOMP: ${frame.body}'),
-        // Render (offre gratuite) : le reveil complet a pris jusqu'a 130s
-        // dans nos tests (Docker + JVM + Spring Boot). On laisse une
-        // marge large plutot que d'echouer sur un serveur juste lent.
+
+        // Erreur WebSocket
+        onWebSocketError: (error) {
+          print('Erreur WebSocket: $error');
+        },
+
+        // Erreur STOMP
+        onStompError: (frame) {
+          print('Erreur STOMP: ${frame.body}');
+        },
+
+        // Render peut être lent au démarrage
         connectionTimeout: const Duration(seconds: 150),
-        // IMPORTANT : sans heartbeat, le serveur Spring ferme les sessions
-        // WebSocket inactives au bout de ~100s ("No messages received
-        // after 100500 ms. Closing..." vu dans les logs Render). Ces deux
-        // lignes envoient un ping toutes les 10s pour garder la connexion
-        // vivante meme quand personne n'ecrit de message.
+
+        // Heartbeat
         heartbeatOutgoing: const Duration(seconds: 10),
+
         heartbeatIncoming: const Duration(seconds: 10),
       ),
     );
+
+    // ------------------------------------------------------------------------
+    // Activer WebSocket
+    // ------------------------------------------------------------------------
+
     _client!.activate();
   }
 
+  // ==========================================================================
+  // CONNEXION STOMP RÉUSSIE
+  // ==========================================================================
+
   void _onConnect(StompFrame frame) {
     _isConnected = true;
+
     if (!_connectedCompleter.isCompleted) {
       _connectedCompleter.complete();
     }
+
+    // ========================================================================
+    // NOTIFICATIONS / MESSAGES
+    // ========================================================================
+
     _client?.subscribe(
       destination: '/user/queue/notifications',
+
       callback: (frame) {
-        if (frame.body != null) {
+        if (frame.body == null) {
+          return;
+        }
+
+        try {
           final data = jsonDecode(frame.body!) as Map<String, dynamic>;
-          _messageController.add(MessageModel.fromJson(data));
+
+          final message = MessageModel.fromJson(data);
+
+          _messageController.add(message);
+        } catch (e) {
+          print('Erreur traitement message: $e');
+        }
+      },
+    );
+
+    // ========================================================================
+    // PRÉSENCE DES UTILISATEURS
+    // ========================================================================
+
+    _client?.subscribe(
+      destination: '/topic/presence',
+
+      callback: (frame) {
+        if (frame.body == null) {
+          return;
+        }
+
+        try {
+          final data = jsonDecode(frame.body!) as Map<String, dynamic>;
+
+          final presence = PresenceModel.fromJson(data);
+
+          _presenceController.add(presence);
+        } catch (e) {
+          print('Erreur traitement présence: $e');
         }
       },
     );
   }
 
+  // ==========================================================================
+  // ATTENDRE LA CONNEXION
+  // ==========================================================================
+
   Future<void> _ensureConnected() async {
-    if (_isConnected) return;
+    if (_isConnected) {
+      return;
+    }
+
     try {
       await _connectedCompleter.future.timeout(const Duration(seconds: 150));
     } catch (_) {
-      // Timeout : on continue quand meme, l'appel echouera proprement.
+      // Le timeout est volontairement silencieux.
+      // L'appel suivant échouera proprement si nécessaire.
     }
   }
 
+  // ==========================================================================
+  // S'ABONNER À UNE CONVERSATION
+  // ==========================================================================
+
   Future<void> subscribeToConversation(String conversationId) async {
     await _ensureConnected();
+
     _client?.subscribe(
       destination: '/topic/conversation.$conversationId',
+
       callback: (frame) {
-        if (frame.body != null) {
+        if (frame.body == null) {
+          return;
+        }
+
+        try {
           final data = jsonDecode(frame.body!) as Map<String, dynamic>;
-          _messageController.add(MessageModel.fromJson(data));
+
+          final message = MessageModel.fromJson(data);
+
+          _messageController.add(message);
+        } catch (e) {
+          print('Erreur message conversation: $e');
         }
       },
     );
   }
+
+  // ==========================================================================
+  // ENVOYER UN MESSAGE
+  // ==========================================================================
 
   Future<void> envoyerMessage({
     required String conversationId,
     required String contenu,
     MessageType type = MessageType.texte,
+    String? messageParentId,
   }) async {
     await _ensureConnected();
+
     _client?.send(
       destination: '/app/chat.send',
+
       body: jsonEncode({
         'conversationId': int.parse(conversationId),
+
         'contenu': contenu,
+
         'type': type.name.toUpperCase(),
+
+        if (messageParentId != null)
+          'messageParentId': int.parse(messageParentId),
       }),
     );
   }
 
+  // ==========================================================================
+  // NOTIFIER "EN TRAIN D'ÉCRIRE"
+  // ==========================================================================
+
   Future<void> notifierEnTrainDecrire(String conversationId) async {
     await _ensureConnected();
+
     _client?.send(
       destination: '/app/chat.typing',
+
       body: jsonEncode({'conversationId': int.parse(conversationId)}),
     );
+  }
+
+  // ==========================================================================
+  // DÉCONNECTER LE WEBSOCKET
+  // ==========================================================================
+
+  Future<void> disconnect() async {
+    try {
+      if (_client != null) {
+        _client!.deactivate();
+      }
+    } catch (e) {
+      print('Erreur déconnexion WebSocket: $e');
+    }
+
+    _client = null;
+    _isConnected = false;
+
+    if (_connectedCompleter.isCompleted) {
+      _connectedCompleter = Completer<void>();
+    }
   }
 }

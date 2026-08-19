@@ -1,8 +1,8 @@
-enum MessageType { texte, image, document, systeme }
+enum MessageType { texte, image, document, audio, video, systeme }
 
 enum MessageStatut { enAttente, envoye, recu, lu }
 
-// Miroir côté client de l'entité `Message` du backend Spring Boot.
+// Miroir côté client de l'entité Message du backend Spring Boot.
 class MessageModel {
   final String id;
   final String conversationId;
@@ -26,52 +26,97 @@ class MessageModel {
     this.messageParentId,
   });
 
+  // ============================================================
+  // JSON -> MessageModel
+  // ============================================================
+
   factory MessageModel.fromJson(Map<String, dynamic> json) {
+    final typeString = (json['type'] as String? ?? 'TEXTE').toUpperCase();
+
+    final statutString = (json['statut'] as String? ?? 'ENVOYE').toUpperCase();
+
     return MessageModel(
       id: json['id'].toString(),
+
       conversationId: json['conversationId'].toString(),
+
       expediteurId: json['expediteurId'].toString(),
+
       expediteurNom: json['expediteurNom'] as String? ?? '',
+
       contenu: json['contenu'] as String? ?? '',
+
+      // TEXTE / IMAGE / DOCUMENT / AUDIO / VIDEO
       type: MessageType.values.firstWhere(
-        (t) => t.name.toUpperCase() == (json['type'] as String? ?? 'TEXTE'),
+        (type) => type.name.toUpperCase() == typeString,
         orElse: () => MessageType.texte,
       ),
+
+      // EN_ATTENTE / ENVOYE / RECU / LU
       statut: MessageStatut.values.firstWhere(
-        (s) => s.name.toUpperCase() == (json['statut'] as String? ?? 'ENVOYE'),
+        (statut) => statut.name.toUpperCase() == statutString,
         orElse: () => MessageStatut.envoye,
       ),
-      // Le backend Render enregistre actuellement les LocalDateTime en UTC
-      // sans suffixe de fuseau. On ajoute donc `Z` si nécessaire, puis on
-      // convertit vers le fuseau de l'appareil (Madagascar : UTC+3).
-      dateEnvoi: _dateLocaleDepuisApi(json['dateEnvoi'] as String),
+
+      dateEnvoi: _dateLocaleDepuisApi(json['dateEnvoi']?.toString()),
+
       messageParentId: json['messageParentId']?.toString(),
     );
   }
 
-  static DateTime _dateLocaleDepuisApi(String valeur) {
+  // ============================================================
+  // DATE API -> DATE LOCALE
+  // ============================================================
+
+  static DateTime _dateLocaleDepuisApi(String? valeur) {
+    if (valeur == null || valeur.isEmpty) {
+      return DateTime.now();
+    }
+
     final contientFuseau = RegExp(r'(Z|[+-]\d{2}:?\d{2})$').hasMatch(valeur);
+
     final date = DateTime.parse(contientFuseau ? valeur : '${valeur}Z');
+
     return date.toLocal();
   }
 
-  Map<String, dynamic> toJson() => {
-    'conversationId': conversationId,
-    'contenu': contenu,
-    'type': type.name.toUpperCase(),
-    if (messageParentId != null) 'messageParentId': messageParentId,
-  };
+  // ============================================================
+  // MessageModel -> JSON
+  // ============================================================
 
-  MessageModel copyWith({MessageStatut? statut}) {
+  Map<String, dynamic> toJson() {
+    return {
+      'conversationId': conversationId,
+      'contenu': contenu,
+      'type': type.name.toUpperCase(),
+
+      if (messageParentId != null) 'messageParentId': messageParentId,
+    };
+  }
+
+  // ============================================================
+  // COPY WITH
+  // ============================================================
+
+  MessageModel copyWith({
+    MessageStatut? statut,
+    String? contenu,
+    MessageType? type,
+  }) {
     return MessageModel(
       id: id,
       conversationId: conversationId,
       expediteurId: expediteurId,
       expediteurNom: expediteurNom,
-      contenu: contenu,
-      type: type,
+
+      contenu: contenu ?? this.contenu,
+
+      type: type ?? this.type,
+
       statut: statut ?? this.statut,
+
       dateEnvoi: dateEnvoi,
+
       messageParentId: messageParentId,
     );
   }
