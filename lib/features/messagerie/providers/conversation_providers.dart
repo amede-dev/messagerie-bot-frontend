@@ -489,30 +489,15 @@ class ChatMessagesNotifier
   // ===========================================================================
 
   Future<void> envoyerFichier(File fichier, MessageType type) async {
-    try {
-      // ========================================================================
-      // 1. UPLOAD DU FICHIER
-      // ========================================================================
+    final fichierEnvoye = await FileUploadService.instance.upload(fichier);
 
-      final fichierEnvoye = await FileUploadService.instance.upload(fichier);
+    // L'URL du fichier est enregistrée comme message via REST. Le backend
+    // diffuse ensuite le message aux deux participants par WebSocket.
+    final message = await ref
+        .read(conversationRepositoryProvider)
+        .envoyerMessage(arg, fichierEnvoye.url, type: type);
 
-      // ========================================================================
-      // 2. ENVOYER L'URL VIA WEBSOCKET
-      // ========================================================================
-
-      await WebSocketService.instance.envoyerMessage(
-        conversationId: arg,
-
-        // IMPORTANT :
-        // On n'envoie plus fichier.path.
-        // On envoie l'URL du serveur.
-        contenu: fichierEnvoye.url,
-
-        type: type,
-      );
-    } catch (e) {
-      print('Erreur envoi fichier: $e');
-    }
+    _ajouterMessage(message);
   }
 
   // ===========================================================================

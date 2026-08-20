@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:audioplayers/audioplayers.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../core/models/message_model.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -176,52 +182,93 @@ class MessageBubble extends StatelessWidget {
   // ==========================================================================
 
   Widget _image() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+    final url = AppConfig.resolveMediaUrl(message.contenu)!;
+    return Stack(
+      alignment: Alignment.bottomRight,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            url,
 
-      child: Image.network(
-        message.contenu,
-
-        width: 240,
-
-        height: 240,
-
-        fit: BoxFit.cover,
-
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;
-          }
-
-          return const SizedBox(
             width: 240,
+
             height: 240,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        },
 
-        errorBuilder: (context, error, stackTrace) {
-          return const SizedBox(
-            width: 240,
-            height: 150,
+            fit: BoxFit.cover,
 
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
 
-                children: [
-                  Icon(Icons.broken_image_outlined, size: 40),
+              return const SizedBox(
+                width: 240,
+                height: 240,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            },
 
-                  SizedBox(height: 8),
+            errorBuilder: (context, error, stackTrace) {
+              return const SizedBox(
+                width: 240,
+                height: 150,
 
-                  Text('Impossible de charger l’image'),
-                ],
-              ),
-            ),
-          );
-        },
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+
+                    children: [
+                      Icon(Icons.broken_image_outlined, size: 40),
+
+                      SizedBox(height: 8),
+
+                      Text('Impossible de charger l’image'),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        _downloadButton(url, 'image'),
+      ],
+    );
+  }
+
+  Widget _downloadButton(String url, String type) {
+    return Padding(
+      padding: const EdgeInsets.all(6),
+      child: Material(
+        color: Colors.black54,
+        shape: const CircleBorder(),
+        child: IconButton(
+          tooltip: 'Télécharger',
+          icon: const Icon(Icons.download, color: Colors.white, size: 20),
+          onPressed: () => _telecharger(url, type),
+        ),
       ),
     );
+  }
+
+  Future<void> _telecharger(String url, String type) async {
+    try {
+      final response = await Dio().get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final nom = Uri.parse(url).pathSegments.last.isEmpty
+          ? 'fichier_$type'
+          : Uri.parse(url).pathSegments.last;
+      await FilePicker.platform.saveFile(
+        dialogTitle: 'Enregistrer le fichier',
+        fileName: nom,
+        bytes: Uint8List.fromList(response.data ?? const <int>[]),
+      );
+    } catch (_) {
+      // Le bouton est dans un StatelessWidget ; l'erreur réseau est déjà
+      // visible via le chargement/les contrôles du système de fichiers.
+    }
   }
 
   // ==========================================================================
@@ -246,6 +293,7 @@ class MessageBubble extends StatelessWidget {
 
   Widget _document(Color couleurTexte) {
     final nom = message.contenu.split('/').last;
+    final url = AppConfig.resolveMediaUrl(message.contenu)!;
 
     return SizedBox(
       width: 230,
@@ -270,6 +318,11 @@ class MessageBubble extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+          ),
+          IconButton(
+            tooltip: 'Télécharger',
+            icon: const Icon(Icons.download_outlined),
+            onPressed: () => _telecharger(url, 'document'),
           ),
         ],
       ),
@@ -312,9 +365,36 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
   final AudioPlayer _player = AudioPlayer();
 
   bool _lecture = false;
+  Duration _position = Duration.zero;
+  Duration _duree = Duration.zero;
+  late final StreamSubscription<Duration> _positionSubscription;
+  late final StreamSubscription<Duration> _dureeSubscription;
+  late final StreamSubscription<void> _completeSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _positionSubscription = _player.onPositionChanged.listen((value) {
+      if (mounted) setState(() => _position = value);
+    });
+    _dureeSubscription = _player.onDurationChanged.listen((value) {
+      if (mounted) setState(() => _duree = value);
+    });
+    _completeSubscription = _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _lecture = false;
+          _position = Duration.zero;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _positionSubscription.cancel();
+    _dureeSubscription.cancel();
+    _completeSubscription.cancel();
     _player.dispose();
 
     super.dispose();
@@ -331,17 +411,13 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
       return;
     }
 
-    await _player.play(UrlSource(widget.url));
+    await _player.play(
+      UrlSource(AppConfig.resolveMediaUrl(widget.url) ?? widget.url),
+    );
 
     if (mounted) {
       setState(() => _lecture = true);
     }
-
-    _player.onPlayerComplete.first.then((_) {
-      if (mounted) {
-        setState(() => _lecture = false);
-      }
-    });
   }
 
   @override
@@ -361,7 +437,35 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
             onPressed: _basculerLecture,
           ),
 
-          const Expanded(child: Text('Message vocal')),
+          Expanded(
+            child: Slider(
+              min: 0,
+              max: _duree.inMilliseconds > 0
+                  ? _duree.inMilliseconds.toDouble()
+                  : 1,
+              value: _position.inMilliseconds
+                  .clamp(
+                    0,
+                    _duree.inMilliseconds > 0 ? _duree.inMilliseconds : 1,
+                  )
+                  .toDouble(),
+              onChanged: (value) =>
+                  _player.seek(Duration(milliseconds: value.round())),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Arrêter',
+            icon: const Icon(Icons.stop_circle_outlined),
+            onPressed: () async {
+              await _player.stop();
+              if (mounted) {
+                setState(() {
+                  _lecture = false;
+                  _position = Duration.zero;
+                });
+              }
+            },
+          ),
         ],
       ),
     );
