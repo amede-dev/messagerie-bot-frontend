@@ -35,6 +35,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   bool _miseAJourLectureEnCours = false;
   bool _estEnTrainDecrire = false;
+  bool _positionInitialeAppliquee = false;
   StreamSubscription<Map<String, dynamic>>? _typingSubscription;
   Timer? _typingTimer;
 
@@ -554,11 +555,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
               // DONNÉES
               data: (messages) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_scrollController.hasClients) {
-                    _scrollEnBas();
-                  }
-                });
+                final doitDefiler =
+                    !_positionInitialeAppliquee ||
+                    (_scrollController.hasClients &&
+                        _scrollController.position.pixels >=
+                            _scrollController.position.maxScrollExtent - 80);
+
+                if (doitDefiler) {
+                  _positionInitialeAppliquee = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_scrollController.hasClients) _scrollEnBas();
+                  });
+                }
 
                 if (_utilisateurCourantId != null &&
                     messages.any(
@@ -580,31 +588,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  controller: _scrollController,
-
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-
-                  itemCount: messages.length,
-
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-
-                    final estUtilisateurCourant =
-                        message.expediteurId == _utilisateurCourantId;
-
-                    return MessageBubble(
-                      message: message,
-                      estUtilisateurCourant: estUtilisateurCourant,
-                      afficherNomExpediteur: estGroupe,
-                      onLongPress: () {
-                        _ouvrirActionsMessage(message, estUtilisateurCourant);
-                      },
-                    );
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.pixels <= 80) {
+                      ref
+                          .read(
+                            chatMessagesProvider(
+                              widget.conversation.id,
+                            ).notifier,
+                          )
+                          .chargerMessagesPlusAnciens();
+                    }
+                    return false;
                   },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+
+                    itemCount: messages.length,
+
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+
+                      final estUtilisateurCourant =
+                          message.expediteurId == _utilisateurCourantId;
+
+                      return MessageBubble(
+                        message: message,
+                        estUtilisateurCourant: estUtilisateurCourant,
+                        afficherNomExpediteur: estGroupe,
+                        onLongPress: () {
+                          _ouvrirActionsMessage(message, estUtilisateurCourant);
+                        },
+                      );
+                    },
+                  ),
                 );
               },
             ),

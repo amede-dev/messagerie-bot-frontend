@@ -26,8 +26,8 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final alignement = estUtilisateurCourant
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start;
+        ? CrossAxisAlignment.start
+        : CrossAxisAlignment.end;
 
     final couleurFond = estUtilisateurCourant
         ? AppColors.primary
@@ -42,10 +42,10 @@ class MessageBubble extends StatelessWidget {
 
       topRight: const Radius.circular(AppTheme.radiusM),
 
-      bottomLeft: Radius.circular(estUtilisateurCourant ? AppTheme.radiusM : 4),
+      bottomLeft: Radius.circular(estUtilisateurCourant ? 4 : AppTheme.radiusM),
 
       bottomRight: Radius.circular(
-        estUtilisateurCourant ? 4 : AppTheme.radiusM,
+        estUtilisateurCourant ? AppTheme.radiusM : 4,
       ),
     );
 

@@ -36,6 +36,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           (element) =>
               NotificationModel.fromJson(element as Map<String, dynamic>),
         )
+        .where((notification) => notification.type != 'MESSAGE')
         .toList();
   }
 

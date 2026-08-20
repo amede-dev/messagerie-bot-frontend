@@ -338,6 +338,9 @@ final chatMessagesProvider =
 class ChatMessagesNotifier
     extends FamilyAsyncNotifier<List<MessageModel>, String> {
   StreamSubscription<MessageModel>? _messageSubscription;
+  int _page = 0;
+  bool _chargementPagePrecedente = false;
+  bool _aEncoreDesMessages = true;
 
   // ===========================================================================
   // BUILD
@@ -363,8 +366,34 @@ class ChatMessagesNotifier
     final repo = ref.read(conversationRepositoryProvider);
 
     final historique = await repo.fetchMessages(conversationId);
+    _page = 0;
+    _aEncoreDesMessages = historique.length >= 30;
 
     return historique;
+  }
+
+  Future<void> chargerMessagesPlusAnciens() async {
+    if (_chargementPagePrecedente || !_aEncoreDesMessages) return;
+
+    _chargementPagePrecedente = true;
+    try {
+      final anciens = await ref
+          .read(conversationRepositoryProvider)
+          .fetchMessages(arg, page: _page + 1);
+
+      _page++;
+      _aEncoreDesMessages = anciens.length >= 30;
+
+      final actuels = state.valueOrNull ?? const <MessageModel>[];
+      final idsExistants = actuels.map((message) => message.id).toSet();
+      final nouveauxAnciens = anciens
+          .where((message) => !idsExistants.contains(message.id))
+          .toList();
+
+      state = AsyncData([...nouveauxAnciens, ...actuels]);
+    } finally {
+      _chargementPagePrecedente = false;
+    }
   }
 
   // ===========================================================================

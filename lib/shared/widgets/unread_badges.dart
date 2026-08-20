@@ -49,7 +49,10 @@ class _UnreadNotificationsBadgeState extends State<UnreadNotificationsBadge> {
       final response = await ApiClient.instance.getNotifications();
       final notifications = response.data as List<dynamic>;
       final count = notifications
-          .where((notification) => notification['lu'] != true)
+          .where(
+            (notification) =>
+                notification['lu'] != true && notification['type'] != 'MESSAGE',
+          )
           .length;
       if (mounted) setState(() => _count = count);
     } catch (_) {

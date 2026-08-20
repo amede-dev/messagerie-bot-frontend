@@ -26,9 +26,12 @@ class ConversationRepository {
     final response = await _api.getMessages(conversationId, page: page);
     final data = response.data as Map<String, dynamic>;
     final content = data['content'] as List;
-    return content
+    final messages = content
         .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
         .toList();
+
+    messages.sort((a, b) => a.dateEnvoi.compareTo(b.dateEnvoi));
+    return messages;
   }
 
   Future<ConversationModel> creerConversationGroupe({
