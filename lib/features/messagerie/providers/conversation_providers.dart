@@ -172,6 +172,13 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     final conversation = actuel[index];
 
     if (conversation.dernierMessage?.id == message.id) {
+      if (conversation.dernierMessage?.statut != message.statut) {
+        final nouvelleListe = List<ConversationModel>.from(actuel);
+        nouvelleListe[index] = conversation.copyWith(
+          dernierMessage: message,
+        );
+        state = AsyncData(nouvelleListe);
+      }
       return;
     }
 
@@ -368,9 +375,14 @@ class ChatMessagesNotifier
   void _ajouterMessage(MessageModel message) {
     final actuel = state.valueOrNull ?? [];
 
-    final existeDeja = actuel.any((m) => m.id == message.id);
+    final indexExistant = actuel.indexWhere((m) => m.id == message.id);
 
-    if (existeDeja) {
+    if (indexExistant != -1) {
+      if (actuel[indexExistant].statut != message.statut) {
+        final miseAJour = List<MessageModel>.from(actuel);
+        miseAJour[indexExistant] = message;
+        state = AsyncData(miseAJour);
+      }
       return;
     }
 
@@ -405,22 +417,28 @@ class ChatMessagesNotifier
   // MARQUER LU
   // ===========================================================================
 
-  Future<void> marquerMessagesRecusCommeLus() async {
-    final messagesRecus = (state.valueOrNull ?? const <MessageModel>[])
-        .where((message) => message.statut == MessageStatut.recu)
+  Future<void> marquerMessagesEntrantsCommeLus(
+    String utilisateurCourantId,
+  ) async {
+    final messagesEntrants = (state.valueOrNull ?? const <MessageModel>[])
+        .where(
+          (message) =>
+              message.expediteurId != utilisateurCourantId &&
+              message.statut != MessageStatut.lu,
+        )
         .toList();
 
-    if (messagesRecus.isEmpty) {
+    if (messagesEntrants.isEmpty) {
       return;
     }
 
     final repo = ref.read(conversationRepositoryProvider);
 
     await Future.wait(
-      messagesRecus.map((message) => repo.marquerMessageLu(message.id)),
+      messagesEntrants.map((message) => repo.marquerMessageLu(message.id)),
     );
 
-    final idsLus = messagesRecus.map((message) => message.id).toSet();
+    final idsLus = messagesEntrants.map((message) => message.id).toSet();
 
     final actuel = state.valueOrNull ?? const <MessageModel>[];
 

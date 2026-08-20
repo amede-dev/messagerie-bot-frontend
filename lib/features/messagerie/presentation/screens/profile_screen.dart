@@ -6,11 +6,15 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/models/user_profile_model.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/file_upload_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
-import 'conversation_list_screen.dart';
 import 'groups_screen.dart';
 import 'home_screen.dart';
+import 'conversation_list_screen.dart';
+import 'notifications_screen.dart';
+import 'notification_settings_screen.dart';
+import 'privacy_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +25,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   File? _photoProfil;
+  String? _photoUrl;
+  bool _envoiPhotoEnCours = false;
   late final Future<UserProfileModel> _profil = _chargerProfil();
 
   Future<UserProfileModel> _chargerProfil() async {
@@ -36,7 +42,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted || image == null) return;
 
-    setState(() => _photoProfil = File(image.path));
+    final fichier = File(image.path);
+    setState(() => _envoiPhotoEnCours = true);
+
+    try {
+      final fichierEnvoye = await FileUploadService.instance
+          .uploadPhotoProfil(fichier);
+      if (!mounted) return;
+      setState(() {
+        _photoProfil = fichier;
+        _photoUrl = fichierEnvoye.url;
+        _envoiPhotoEnCours = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo de profil enregistrée.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _envoiPhotoEnCours = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d’enregistrer la photo.')),
+      );
+    }
   }
 
   Future<void> _deconnecter(BuildContext context) async {
@@ -62,6 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final profil = snapshot.data!;
+          final photoUrl = _photoUrl ?? profil.photoUrl;
           return ListView(
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
             children: [
@@ -73,14 +101,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 52,
                       backgroundColor: AppColors.primaryLight,
                       backgroundImage: _photoProfil == null
-                          ? null
+                          ? (photoUrl == null ? null : NetworkImage(photoUrl))
                           : FileImage(_photoProfil!),
                       child: _photoProfil == null
-                          ? const Icon(
-                              Icons.person,
-                              color: AppColors.primary,
-                              size: 52,
-                            )
+                          ? (photoUrl == null
+                                ? const Icon(
+                                    Icons.person,
+                                    color: AppColors.primary,
+                                    size: 52,
+                                  )
+                                : null)
                           : null,
                     ),
                     Positioned(
@@ -101,9 +131,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               size: 20,
                             ),
                           ),
+                          ),
                         ),
                       ),
-                    ),
+                    if (_envoiPhotoEnCours)
+                      const Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -114,48 +156,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     : profil.nomComplet,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              ),
-              if (profil.formation != null) ...[
-                const SizedBox(height: 8),
-                Center(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      child: Text(
-                        profil.formation!,
-                        style: const TextStyle(
-                          color: AppColors.primaryDark,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _ProfileStat(value: '${profil.amis}', label: 'Amis'),
-                      _ProfileDivider(),
-                      _ProfileStat(
-                        value: '${profil.groupes}',
-                        label: 'Groupes',
-                      ),
-                    ],
-                  ),
-                ),
               ),
               const SizedBox(height: 28),
               const Text(
@@ -174,10 +174,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _ProfileAction(
                       icon: Icons.lock_outline,
                       label: 'Paramètres de confidentialité',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PrivacySettingsScreen(),
+                        ),
+                      ),
                     ),
                     _ProfileAction(
                       icon: Icons.notifications_none,
                       label: 'Notifications',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationSettingsScreen(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -196,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 3,
+        selectedIndex: 4,
         onDestinationSelected: (index) {
           if (index == 0) {
             Navigator.of(
@@ -207,19 +217,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MaterialPageRoute(builder: (_) => const ConversationListScreen()),
             );
           } else if (index == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            );
+          } else if (index == 3) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat',
+            icon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 24,
+              height: 24,
+            ),
+            selectedIcon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 26,
+              height: 26,
+            ),
+            label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_none),
+            label: 'Notifications',
           ),
           NavigationDestination(
             icon: Icon(Icons.group_outlined),
@@ -232,39 +259,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.value, required this.label});
-  final String value;
-  final String label;
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        value,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        label,
-        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-      ),
-    ],
-  );
-}
-
-class _ProfileDivider extends StatelessWidget {
-  const _ProfileDivider();
-  @override
-  Widget build(BuildContext context) =>
-      Container(width: 1, height: 40, color: const Color(0xFFC4C7C8));
-}
-
 class _ProfileAction extends StatelessWidget {
-  const _ProfileAction({required this.icon, required this.label});
+  const _ProfileAction({required this.icon, required this.label, this.onTap});
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => ListTile(
+    onTap: onTap,
     leading: Icon(icon, color: AppColors.textSecondary),
     title: Text(
       label,

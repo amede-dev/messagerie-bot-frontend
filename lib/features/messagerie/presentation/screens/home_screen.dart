@@ -51,23 +51,7 @@ class HomeScreen extends ConsumerWidget {
             onSelected: (value) => _ouvrirEcran(context, value),
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'connexion', child: Text('Connexion')),
-              PopupMenuItem(value: 'messagerie', child: Text('Messagerie')),
-              PopupMenuItem(value: 'chat', child: Text('Chat 1-to-1')),
-              PopupMenuItem(
-                value: 'notifications',
-                child: Text('Notifications'),
-              ),
-              PopupMenuItem(
-                value: 'nouvelle',
-                child: Text('Nouvelle conversation'),
-              ),
               PopupMenuItem(value: 'privees', child: Text('Messages privés')),
-              PopupMenuItem(value: 'groupes', child: Text('Groupes')),
-              PopupMenuItem(value: 'profil', child: Text('Profil')),
-              PopupMenuItem(
-                value: 'assistant',
-                child: Text('Assistant Bot (IA)'),
-              ),
             ],
           ),
         ],
@@ -108,15 +92,28 @@ class HomeScreen extends ConsumerWidget {
         onDestinationSelected: (index) {
           _ouvrirNavigation(context, index);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
+            icon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 24,
+              height: 24,
+            ),
+            selectedIcon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 26,
+              height: 26,
+            ),
             label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_none),
+            label: 'Notifications',
           ),
           NavigationDestination(
             icon: Icon(Icons.group_outlined),
@@ -134,8 +131,9 @@ class HomeScreen extends ConsumerWidget {
   static void _ouvrirNavigation(BuildContext context, int index) {
     final destination = switch (index) {
       1 => const ConversationListScreen(),
-      2 => const GroupsScreen(),
-      3 => const ProfileScreen(),
+      2 => const NotificationsScreen(),
+      3 => const GroupsScreen(),
+      4 => const ProfileScreen(),
       _ => null,
     };
 

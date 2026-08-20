@@ -24,13 +24,21 @@ class FileUploadService {
   final ApiClient _api = ApiClient.instance;
 
   Future<UploadedFile> upload(File fichier) async {
+    return _envoyer(fichier, '/api/files/upload');
+  }
+
+  Future<UploadedFile> uploadPhotoProfil(File fichier) async {
+    return _envoyer(fichier, '/api/files/profile');
+  }
+
+  Future<UploadedFile> _envoyer(File fichier, String endpoint) async {
     final nom = fichier.path.split(Platform.pathSeparator).last;
 
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(fichier.path, filename: nom),
     });
 
-    final response = await _api.dio.post('/api/files/upload', data: formData);
+    final response = await _api.dio.post(endpoint, data: formData);
 
     final data = response.data as Map<String, dynamic>;
 

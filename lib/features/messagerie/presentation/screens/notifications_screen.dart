@@ -4,6 +4,7 @@ import '../../../../core/models/notification_model.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
+import 'groups_screen.dart';
 import 'conversation_list_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
@@ -18,14 +19,54 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  late final Future<List<NotificationModel>> _notifications = _charger();
+  late Future<List<NotificationModel>> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = _charger();
+  }
 
   Future<List<NotificationModel>> _charger() async {
     final response = await ApiClient.instance.getNotifications();
     final donnees = response.data as List<dynamic>;
-    return donnees.map((element) => NotificationModel.fromJson(
-      element as Map<String, dynamic>,
-    )).toList();
+    return donnees
+        .map(
+          (element) =>
+              NotificationModel.fromJson(element as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
+  Future<void> _supprimer(NotificationModel notification) async {
+    await ApiClient.instance.supprimerNotification(notification.id);
+    if (mounted) setState(() => _notifications = _charger());
+  }
+
+  Future<void> _supprimerToutes() async {
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tout supprimer ?'),
+        content: const Text(
+          'Toutes vos notifications seront supprimées de la base de données.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Tout supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer != true) return;
+    await ApiClient.instance.supprimerToutesLesNotifications();
+    if (mounted) setState(() => _notifications = _charger());
   }
 
   @override
@@ -38,59 +79,97 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'UniSocial',
+          'Notifications',
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
-            tooltip: 'Paramètres',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+            tooltip: 'Tout supprimer',
+            icon: const Icon(Icons.delete_sweep_outlined),
+            onPressed: _supprimerToutes,
           ),
         ],
       ),
       body: FutureBuilder<List<NotificationModel>>(
         future: _notifications,
         builder: (context, snapshot) {
-          if (snapshot.hasError) return Center(child: Text('Erreur : ${snapshot.error}'));
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError)
+            return Center(child: Text('Erreur : ${snapshot.error}'));
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
           final notifications = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
             children: [
-              const Text('Notifications', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 20),
               if (notifications.isEmpty)
-                const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Aucune notification pour le moment.')))
-              else ...notifications.map((notification) => _NotificationCard(notification: notification)),
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('Aucune notification pour le moment.'),
+                  ),
+                )
+              else
+                ...notifications.map(
+                  (notification) => _NotificationCard(
+                    notification: notification,
+                    onDelete: () => _supprimer(notification),
+                  ),
+                ),
             ],
           );
         },
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
+        selectedIndex: 2,
         onDestinationSelected: (index) {
           if (index == 0) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (index == 1) {
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ConversationListScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const ConversationListScreen()),
             );
           } else if (index == 3) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
+          } else if (index == 4) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Accueil'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-          NavigationDestination(icon: Icon(Icons.group_outlined), label: 'Groupes'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 24,
+              height: 24,
+            ),
+            selectedIcon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 26,
+              height: 26,
+            ),
+            label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_none),
+            label: 'Notifications',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.group_outlined),
+            label: 'Groupes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
         ],
       ),
     );
@@ -98,9 +177,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.notification});
+  const _NotificationCard({required this.notification, required this.onDelete});
 
   final NotificationModel notification;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +206,9 @@ class _NotificationCard extends StatelessWidget {
                   Text(
                     notification.type,
                     style: TextStyle(
-                      fontWeight: notification.lue ? FontWeight.w500 : FontWeight.w700,
+                      fontWeight: notification.lue
+                          ? FontWeight.w500
+                          : FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -136,7 +218,10 @@ class _NotificationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    notification.dateCreation.toLocal().toString().substring(0, 16),
+                    notification.dateCreation.toLocal().toString().substring(
+                      0,
+                      16,
+                    ),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.primary,
@@ -145,11 +230,17 @@ class _NotificationCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!notification.lue)
-              const Padding(
-                padding: EdgeInsets.only(top: 3),
-                child: Icon(Icons.circle, size: 8, color: AppColors.primary),
+            IconButton(
+              tooltip: 'Supprimer la notification',
+              icon: const Icon(
+                Icons.delete_outline,
+                color: AppColors.danger,
+                size: 20,
               ),
+              onPressed: onDelete,
+            ),
+            if (!notification.lue)
+              const Icon(Icons.circle, size: 8, color: AppColors.primary),
           ],
         ),
       ),

@@ -15,6 +15,7 @@ import 'chat_screen.dart';
 import 'contact_list_screen.dart';
 import 'groups_screen.dart';
 import 'new_conversation_screen.dart';
+import 'notifications_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
@@ -627,23 +628,40 @@ class _ConversationListScreenState
               context,
             ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (index == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            );
+          } else if (index == 3) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
-          } else if (index == 3) {
+          } else if (index == 4) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
+            icon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 24,
+              height: 24,
+            ),
+            selectedIcon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 26,
+              height: 26,
+            ),
             label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_none),
+            label: 'Notifications',
           ),
           NavigationDestination(
             icon: Icon(Icons.group_outlined),

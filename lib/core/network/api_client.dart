@@ -116,6 +116,12 @@ class ApiClient {
 
   Future<Response> getNotifications() => _dio.get('/api/notifications');
 
+  Future<Response> supprimerNotification(String id) =>
+      _dio.delete('/api/notifications/$id');
+
+  Future<Response> supprimerToutesLesNotifications() =>
+      _dio.delete('/api/notifications');
+
   Future<Response> quitterConversation(String conversationId) =>
       _dio.delete('/api/conversations/$conversationId');
 }

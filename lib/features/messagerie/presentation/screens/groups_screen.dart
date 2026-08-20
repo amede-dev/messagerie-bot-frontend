@@ -6,8 +6,10 @@ import '../../../../core/theme/app_theme.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
 import 'chat_screen.dart';
+import 'conversation_list_screen.dart';
 import 'home_screen.dart';
 import 'new_conversation_screen.dart';
+import 'notifications_screen.dart';
 import 'profile_screen.dart';
 
 /// Groupes d'étude et clubs. Les groupes affichés viennent de la table
@@ -98,11 +100,13 @@ class GroupsScreen extends ConsumerWidget {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
+        selectedIndex: 3,
         onDestinationSelected: (index) {
           final destination = switch (index) {
             0 => const HomeScreen(),
-            3 => const ProfileScreen(),
+            1 => const ConversationListScreen(),
+            2 => const NotificationsScreen(),
+            4 => const ProfileScreen(),
             _ => null,
           };
 
@@ -112,9 +116,22 @@ class GroupsScreen extends ConsumerWidget {
             );
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Accueil'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
+          NavigationDestination(
+            icon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 24,
+              height: 24,
+            ),
+            selectedIcon: Image.asset(
+              'assets/images/messangeur.png',
+              width: 26,
+              height: 26,
+            ),
+            label: 'Messages',
+          ),
+          NavigationDestination(icon: Icon(Icons.notifications_none), label: 'Notifications'),
           NavigationDestination(icon: Icon(Icons.group), label: 'Groupes'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
         ],

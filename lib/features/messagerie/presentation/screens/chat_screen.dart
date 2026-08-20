@@ -198,7 +198,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       await ref
           .read(chatMessagesProvider(widget.conversation.id).notifier)
-          .marquerMessagesRecusCommeLus();
+          .marquerMessagesEntrantsCommeLus(_utilisateurCourantId);
 
       ref
           .read(conversationListProvider.notifier)
@@ -531,7 +531,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 });
 
                 if (messages.any(
-                  (message) => message.statut == MessageStatut.recu,
+                  (message) =>
+                      message.expediteurId != _utilisateurCourantId &&
+                      message.statut != MessageStatut.lu,
                 )) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _marquerMessagesCommeLus();
