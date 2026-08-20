@@ -193,12 +193,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
 
+    final utilisateurCourantId = _utilisateurCourantId;
+    if (utilisateurCourantId == null) {
+      return;
+    }
+
     _miseAJourLectureEnCours = true;
 
     try {
       await ref
           .read(chatMessagesProvider(widget.conversation.id).notifier)
-          .marquerMessagesEntrantsCommeLus(_utilisateurCourantId);
+          .marquerMessagesEntrantsCommeLus(utilisateurCourantId);
 
       ref
           .read(conversationListProvider.notifier)
@@ -530,7 +535,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   }
                 });
 
-                if (messages.any(
+                if (_utilisateurCourantId != null && messages.any(
                   (message) =>
                       message.expediteurId != _utilisateurCourantId &&
                       message.statut != MessageStatut.lu,
