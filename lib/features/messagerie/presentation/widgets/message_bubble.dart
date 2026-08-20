@@ -25,9 +25,9 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Les messages privés sont volontairement regroupés à droite,
-    // qu'ils soient envoyés par Amedé ou par Bernard.
-    const alignement = CrossAxisAlignment.end;
+    final alignement = estUtilisateurCourant
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
 
     final couleurFond = estUtilisateurCourant
         ? AppColors.primary
@@ -60,7 +60,9 @@ class MessageBubble extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 3),
 
           child: Align(
-            alignment: Alignment.centerRight,
+            alignment: estUtilisateurCourant
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: alignement,
