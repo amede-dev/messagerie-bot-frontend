@@ -39,9 +39,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _miseAJourLectureEnCours = false;
   bool _estEnTrainDecrire = false;
   bool _enregistrementVocal = false;
+  String? _fichierVocalEnregistre;
+  Duration _dureeVocale = Duration.zero;
   bool _positionInitialeAppliquee = false;
   StreamSubscription<Map<String, dynamic>>? _typingSubscription;
   Timer? _typingTimer;
+  Timer? _timerVocal;
 
   String? _utilisateurCourantId;
 
@@ -58,6 +61,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _typingTimer?.cancel();
     _typingSubscription?.cancel();
+    _timerVocal?.cancel();
     _audioRecorder.dispose();
 
     super.dispose();
@@ -163,17 +167,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _demarrerMessageVocal() async {
     try {
-      if (_enregistrementVocal) {
-        final chemin = await _audioRecorder.stop();
-        if (!mounted) return;
-        setState(() => _enregistrementVocal = false);
-
-        if (chemin == null) return;
-        await ref
-            .read(chatMessagesProvider(widget.conversation.id).notifier)
-            .envoyerFichier(File(chemin), MessageType.audio);
-        return;
-      }
+      if (_enregistrementVocal || _fichierVocalEnregistre != null) return;
 
       if (!await _audioRecorder.hasPermission()) {
         if (mounted) {
@@ -191,7 +185,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         path: chemin,
       );
       if (mounted) {
-        setState(() => _enregistrementVocal = true);
+        setState(() {
+          _enregistrementVocal = true;
+          _dureeVocale = Duration.zero;
+        });
+        _timerVocal = Timer.periodic(const Duration(seconds: 1), (_) {
+          if (mounted && _enregistrementVocal) {
+            setState(() => _dureeVocale += const Duration(seconds: 1));
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Enregistrement… Appuyez pour arrêter.'),
@@ -206,6 +208,40 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
       }
     }
+  }
+
+  Future<void> _arreterEnregistrementVocal() async {
+    final chemin = await _audioRecorder.stop();
+    _timerVocal?.cancel();
+    if (!mounted) return;
+    setState(() {
+      _enregistrementVocal = false;
+      _fichierVocalEnregistre = chemin;
+    });
+  }
+
+  Future<void> _envoyerVocalEnregistre() async {
+    final chemin = _fichierVocalEnregistre;
+    if (chemin == null) return;
+    await ref
+        .read(chatMessagesProvider(widget.conversation.id).notifier)
+        .envoyerFichier(File(chemin), MessageType.audio);
+    if (!mounted) return;
+    setState(() {
+      _fichierVocalEnregistre = null;
+      _dureeVocale = Duration.zero;
+    });
+  }
+
+  Future<void> _supprimerVocalEnregistre() async {
+    if (_enregistrementVocal) await _audioRecorder.stop();
+    _timerVocal?.cancel();
+    if (!mounted) return;
+    setState(() {
+      _enregistrementVocal = false;
+      _fichierVocalEnregistre = null;
+      _dureeVocale = Duration.zero;
+    });
   }
 
   // ============================================================
@@ -682,6 +718,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onTyping: _notifierFrappe,
             onGalleryTap: _choisirEtEnvoyerImage,
             onVoiceTap: _demarrerMessageVocal,
+            enregistrementVocal:
+                _enregistrementVocal || _fichierVocalEnregistre != null,
+            vocalEnCours: _enregistrementVocal,
+            dureeVocale: _dureeVocale,
+            onStopVocal: _arreterEnregistrementVocal,
+            onDeleteVocal: _supprimerVocalEnregistre,
+            onSendVocal: _envoyerVocalEnregistre,
           ),
         ],
       ),
