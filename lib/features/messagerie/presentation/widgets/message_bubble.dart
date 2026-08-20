@@ -25,9 +25,9 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alignement = estUtilisateurCourant
-        ? CrossAxisAlignment.start
-        : CrossAxisAlignment.end;
+    // Les messages privés sont volontairement regroupés à droite,
+    // qu'ils soient envoyés par Amedé ou par Bernard.
+    const alignement = CrossAxisAlignment.end;
 
     final couleurFond = estUtilisateurCourant
         ? AppColors.primary
