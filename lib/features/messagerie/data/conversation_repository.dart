@@ -100,6 +100,24 @@ class ConversationRepository {
     await _api.marquerStatut(messageId, 'LU');
   }
 
+  Future<MessageModel> envoyerMessage(
+    String conversationId,
+    String contenu, {
+    MessageType type = MessageType.texte,
+  }) async {
+    if (AppConfig.useMockBackend) {
+      throw UnsupportedError('Envoi indisponible en mode mock');
+    }
+
+    final response = await _api.envoyerMessageRest({
+      'conversationId': conversationId,
+      'contenu': contenu,
+      'type': type.name.toUpperCase(),
+    });
+
+    return MessageModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> ajouterParticipant(
     String conversationId,
     String utilisateurId,

@@ -7,6 +7,7 @@ import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/network/websocket_service.dart';
+import '../../../core/network/auth_repository.dart';
 import '../data/conversation_repository.dart';
 
 import '../../../core/network/file_upload_service.dart';
@@ -55,6 +56,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
   StreamSubscription<MessageModel>? _messageSubscription;
 
   StreamSubscription<PresenceModel>? _presenceSubscription;
+  String? _utilisateurCourantId;
 
   // ===========================================================================
   // TRI DES CONVERSATIONS
@@ -94,6 +96,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
 
   @override
   Future<List<ConversationModel>> build() async {
+    _utilisateurCourantId = await AuthRepository().idUtilisateurConnecte();
     // -------------------------------------------------------------------------
     // Écouter les nouveaux messages
     // -------------------------------------------------------------------------
@@ -188,7 +191,8 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
 
     var nombreNonLus = conversation.nombreNonLus;
 
-    if (message.statut == MessageStatut.recu) {
+    if (message.expediteurId != _utilisateurCourantId &&
+        message.statut != MessageStatut.lu) {
       nombreNonLus++;
     }
 
@@ -433,12 +437,11 @@ class ChatMessagesNotifier
   // ENVOYER
   // ===========================================================================
 
-  void envoyer(String texte) {
-    WebSocketService.instance.envoyerMessage(
-      conversationId: arg,
-      contenu: texte,
-      type: MessageType.texte,
-    );
+  Future<void> envoyer(String texte) async {
+    final message = await ref
+        .read(conversationRepositoryProvider)
+        .envoyerMessage(arg, texte);
+    _ajouterMessage(message);
   }
 
   // ===========================================================================
