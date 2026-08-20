@@ -33,9 +33,17 @@ class FileUploadService {
 
   Future<UploadedFile> _envoyer(File fichier, String endpoint) async {
     final nom = fichier.path.split(Platform.pathSeparator).last;
+    final extension = nom.split('.').last.toLowerCase();
+    const extensionsAudio = {'m4a', 'mp3', 'wav', 'aac', 'ogg'};
 
     final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(fichier.path, filename: nom),
+      'file': await MultipartFile.fromFile(
+        fichier.path,
+        filename: nom,
+        contentType: extensionsAudio.contains(extension)
+            ? DioMediaType('audio', extension == 'm4a' ? 'mp4' : extension)
+            : null,
+      ),
     });
 
     final response = await _api.dio.post(endpoint, data: formData);

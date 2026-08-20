@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 
@@ -251,9 +252,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _envoiVocalEnCours = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Échec de l’envoi vocal : $e')));
+      final detail = e is DioException
+          ? 'HTTP ${e.response?.statusCode ?? 'inconnu'} : '
+                '${e.response?.data ?? e.message}'
+          : e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Échec de l’envoi vocal : $detail')),
+      );
     }
   }
 
