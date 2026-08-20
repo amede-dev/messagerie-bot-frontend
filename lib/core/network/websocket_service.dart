@@ -123,6 +123,10 @@ class WebSocketService {
         // Connexion réussie
         onConnect: _onConnect,
 
+        // Une coupure réseau temporaire ne doit pas laisser l'utilisateur
+        // bloqué en « hors ligne » jusqu'au prochain redémarrage de l'app.
+        reconnectDelay: const Duration(seconds: 5),
+
         // Déconnexion
         onDisconnect: (frame) {
           _isConnected = false;

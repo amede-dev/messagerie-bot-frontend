@@ -13,15 +13,26 @@ class UnreadMessagesBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversations = ref.watch(conversationListProvider).valueOrNull ?? [];
-    final count = conversations.fold<int>(
-      0,
-      (total, conversation) => total + conversation.nombreNonLus,
-    );
+    final count = ref.watch(unreadMessagesCountProvider);
 
     return _Badge(count: count, child: child);
   }
 }
+
+/// Nombre total de messages entrants non lus.
+///
+/// Ce compteur est volontairement indépendant des notifications générales :
+/// les messages doivent être affichés sur l'icône « Messages » uniquement.
+final unreadMessagesCountProvider = Provider<int>((ref) {
+  final conversations =
+      ref.watch(conversationListProvider).valueOrNull ?? const [];
+
+  return conversations.fold<int>(
+    0,
+    (total, conversation) =>
+        total + (conversation.nombreNonLus > 0 ? conversation.nombreNonLus : 0),
+  );
+});
 
 class UnreadNotificationsBadge extends StatefulWidget {
   const UnreadNotificationsBadge({super.key, required this.child});
@@ -48,12 +59,10 @@ class _UnreadNotificationsBadgeState extends State<UnreadNotificationsBadge> {
     try {
       final response = await ApiClient.instance.getNotifications();
       final notifications = response.data as List<dynamic>;
-      final count = notifications
-          .where(
-            (notification) =>
-                notification['lu'] != true && notification['type'] != 'MESSAGE',
-          )
-          .length;
+      final count = notifications.where((notification) {
+        final type = notification['type']?.toString().toUpperCase();
+        return notification['lu'] != true && type != 'MESSAGE';
+      }).length;
       if (mounted) setState(() => _count = count);
     } catch (_) {
       // L'absence temporaire du backend ne doit pas bloquer la navigation.

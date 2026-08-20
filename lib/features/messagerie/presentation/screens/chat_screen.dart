@@ -47,15 +47,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   StreamSubscription<Map<String, dynamic>>? _typingSubscription;
   Timer? _typingTimer;
   Timer? _timerVocal;
+  StreamSubscription<PresenceModel>? _presenceSubscription;
 
   String? _utilisateurCourantId;
+  late bool _autreUtilisateurEstEnLigne;
+  DateTime? _derniereConnexionAutreUtilisateur;
 
   @override
   void initState() {
     super.initState();
 
+    _autreUtilisateurEstEnLigne = widget.conversation.estEnLigne;
+    _derniereConnexionAutreUtilisateur =
+        widget.conversation.derniereConnexion;
+
     _chargerUtilisateurConnecte();
     _ecouterFrappe();
+    _ecouterPresence();
   }
 
   @override
@@ -63,10 +71,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _typingTimer?.cancel();
     _typingSubscription?.cancel();
+    _presenceSubscription?.cancel();
     _timerVocal?.cancel();
     _audioRecorder.dispose();
 
     super.dispose();
+  }
+
+  void _ecouterPresence() {
+    _presenceSubscription = WebSocketService.instance.presenceStream.listen(
+      (presence) {
+        if (!mounted ||
+            presence.utilisateurId != widget.conversation.utilisateurId) {
+          return;
+        }
+
+        setState(() {
+          _autreUtilisateurEstEnLigne = presence.enLigne;
+          if (presence.derniereConnexion != null) {
+            _derniereConnexionAutreUtilisateur = presence.derniereConnexion;
+          }
+        });
+      },
+    );
   }
 
   void _ecouterFrappe() {
@@ -288,11 +315,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ============================================================
 
   String _statutPresence() {
-    if (widget.conversation.estEnLigne) {
+    if (_autreUtilisateurEstEnLigne) {
       return 'Actif';
     }
 
-    final derniereConnexion = widget.conversation.derniereConnexion;
+    final derniereConnexion = _derniereConnexionAutreUtilisateur;
 
     if (derniereConnexion == null) {
       return 'Hors ligne';
