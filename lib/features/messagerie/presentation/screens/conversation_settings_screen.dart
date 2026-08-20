@@ -264,12 +264,14 @@ class _ConversationSettingsScreenState
         children: [
           const SizedBox(height: 12),
 
-          AvatarCircle(
-            initiales:
-                widget.conversation.avatarInitiales ??
-                (nom.isNotEmpty ? nom.substring(0, 1) : '?'),
-
-            size: 84,
+          Center(
+            child: AvatarCircle(
+              initiales:
+                  widget.conversation.avatarInitiales ??
+                  (nom.isNotEmpty ? nom.substring(0, 1) : '?'),
+              imageUrl: widget.conversation.photoUrl,
+              size: 84,
+            ),
           ),
 
           const SizedBox(height: 12),
