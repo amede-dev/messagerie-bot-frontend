@@ -207,7 +207,7 @@ class HomeScreen extends ConsumerWidget {
       'chat' => const ConversationListScreen(),
       'notifications' => const NotificationsScreen(),
       'nouvelle' => const NewConversationScreen(),
-      'privees' => const ConversationListScreen(),
+      'privees' => const ConversationListScreen(initialFilter: 'Privées'),
       'groupes' => const GroupsScreen(),
       'profil' => const ProfileScreen(),
       'assistant' => const BotChatScreen(),

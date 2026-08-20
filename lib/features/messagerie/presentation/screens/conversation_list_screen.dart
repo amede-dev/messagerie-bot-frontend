@@ -26,7 +26,9 @@ import 'profile_screen.dart';
 /// Il est accessible uniquement par son bouton flottant,
 /// placé juste au-dessus du bouton "+".
 class ConversationListScreen extends ConsumerStatefulWidget {
-  const ConversationListScreen({super.key});
+  const ConversationListScreen({super.key, this.initialFilter = 'Toutes'});
+
+  final String initialFilter;
 
   @override
   ConsumerState<ConversationListScreen> createState() =>
@@ -44,6 +46,12 @@ class _ConversationListScreenState
   // ===========================================================================
   // INITIALISATION
   // ===========================================================================
+
+  @override
+  void initState() {
+    super.initState();
+    _filtre = widget.initialFilter;
+  }
 
   @override
   void dispose() {
@@ -395,7 +403,7 @@ class _ConversationListScreenState
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
-              children: ['Toutes', 'Privées', 'Groupes', 'Bot Assistant']
+              children: ['Toutes', 'Privées', 'Groupes']
                   .map(
                     (filtre) => Expanded(
                       child: InkWell(
@@ -508,8 +516,6 @@ class _ConversationListScreenState
                   final correspondFiltre = switch (_filtre) {
                     'Privées' => conversation.type == ConversationType.privee,
                     'Groupes' => conversation.type == ConversationType.groupe,
-                    'Bot Assistant' =>
-                      conversation.type == ConversationType.bot,
                     _ => true,
                   };
                   return correspondRecherche && correspondFiltre;
