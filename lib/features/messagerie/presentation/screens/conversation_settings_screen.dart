@@ -285,46 +285,6 @@ class _ConversationSettingsScreenState
 
           const SizedBox(height: 6),
 
-          const SizedBox(height: 18),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-              children: [
-                _Raccourci(
-                  icon: Icons.call,
-                  label: 'Appeler',
-                  onTap: () =>
-                      _informer('L’appel audio sera disponible prochainement.'),
-                ),
-
-                _Raccourci(
-                  icon: Icons.videocam,
-                  label: 'Discussion vidéo',
-                  onTap: () =>
-                      _informer('L’appel vidéo sera disponible prochainement.'),
-                ),
-
-                _Raccourci(
-                  icon: _estGroupe
-                      ? Icons.person_add_alt_1
-                      : Icons.person_outline,
-
-                  label: _estGroupe ? 'Ajouter' : 'Profil',
-
-                  onTap: _estGroupe
-                      ? _ouvrirAjoutParticipants
-                      : () => _informer('Profil de $nom'),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
           if (_estGroupe) ..._optionsGroupe(nom) else ..._optionsPrivees(nom),
         ],
       ),
@@ -371,15 +331,6 @@ class _ConversationSettingsScreenState
       onTap: _modifierPhotoGroupe,
     ),
 
-    const _TitreSection('Sécurité et assistance'),
-
-    _Option(
-      icon: Icons.flag_outlined,
-      titre: 'Signaler',
-      danger: true,
-      onTap: () => _informer('Conversation signalée à la modération.'),
-    ),
-
     _Option(
       icon: _enCours ? Icons.hourglass_top : Icons.logout,
       titre: 'Quitter le groupe',
@@ -401,32 +352,6 @@ class _ConversationSettingsScreenState
       onTap: () => Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen())),
-    ),
-
-    _Option(
-      icon: Icons.photo_outlined,
-      titre: 'Médias partagés',
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => SharedMediaScreen(conversationNom: nom),
-        ),
-      ),
-    ),
-
-    const _TitreSection('Sécurité et assistance'),
-
-    _Option(
-      icon: Icons.block_outlined,
-      titre: 'Bloquer $nom',
-      danger: true,
-      onTap: _confirmerBlocage,
-    ),
-
-    _Option(
-      icon: Icons.flag_outlined,
-      titre: 'Signaler',
-      danger: true,
-      onTap: () => _informer('Conversation signalée à la modération.'),
     ),
 
     _Option(
