@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:record/record.dart';
 
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/models/message_model.dart';
@@ -30,11 +32,13 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
+  final AudioRecorder _audioRecorder = AudioRecorder();
 
   final AuthRepository _authRepository = AuthRepository();
 
   bool _miseAJourLectureEnCours = false;
   bool _estEnTrainDecrire = false;
+  bool _enregistrementVocal = false;
   bool _positionInitialeAppliquee = false;
   StreamSubscription<Map<String, dynamic>>? _typingSubscription;
   Timer? _typingTimer;
@@ -54,6 +58,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _typingTimer?.cancel();
     _typingSubscription?.cancel();
+    _audioRecorder.dispose();
 
     super.dispose();
   }
@@ -115,7 +120,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _choisirEtEnvoyerImage() async {
     try {
-      final selection = await choisirImageDepuisGalerie();
+      final selection = await afficherAttachmentPicker(context);
 
       if (selection == null) {
         return;
@@ -125,12 +130,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return;
       }
 
+      final extension = selection.fichier.path.split('.').last.toLowerCase();
+      final type = selection.estImage
+          ? MessageType.image
+          : ['mp4', 'mov', 'avi', 'mkv', 'webm'].contains(extension)
+          ? MessageType.video
+          : ['mp3', 'wav', 'm4a', 'aac', 'ogg'].contains(extension)
+          ? MessageType.audio
+          : MessageType.document;
+
       await ref
           .read(chatMessagesProvider(widget.conversation.id).notifier)
-          .envoyerFichier(
-            selection.fichier,
-            selection.estImage ? MessageType.image : MessageType.document,
-          );
+          .envoyerFichier(selection.fichier, type);
 
       if (mounted) {
         _scrollEnBas();
@@ -151,18 +162,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ============================================================
 
   Future<void> _demarrerMessageVocal() async {
-    if (!mounted) {
-      return;
-    }
+    try {
+      if (_enregistrementVocal) {
+        final chemin = await _audioRecorder.stop();
+        if (!mounted) return;
+        setState(() => _enregistrementVocal = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'L’enregistrement vocal sera disponible '
-          'après le raccordement au serveur.',
-        ),
-      ),
-    );
+        if (chemin == null) return;
+        await ref
+            .read(chatMessagesProvider(widget.conversation.id).notifier)
+            .envoyerFichier(File(chemin), MessageType.audio);
+        return;
+      }
+
+      if (!await _audioRecorder.hasPermission()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Autorisez l’accès au microphone.')),
+          );
+        }
+        return;
+      }
+
+      final chemin =
+          '${Directory.systemTemp.path}/message_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _audioRecorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc),
+        path: chemin,
+      );
+      if (mounted) {
+        setState(() => _enregistrementVocal = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Enregistrement… Appuyez pour arrêter.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _enregistrementVocal = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible d’enregistrer l’audio : $e')),
+        );
+      }
+    }
   }
 
   // ============================================================
