@@ -4,6 +4,7 @@ import '../../../../core/models/notification_model.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
+import '../../../../shared/widgets/unread_badges.dart';
 import 'groups_screen.dart';
 import 'conversation_list_screen.dart';
 import 'home_screen.dart';
@@ -146,20 +147,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 24,
-              height: 24,
+            icon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
             ),
-            selectedIcon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 26,
-              height: 26,
+            selectedIcon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none),
+            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
             label: 'Notifications',
           ),
           NavigationDestination(

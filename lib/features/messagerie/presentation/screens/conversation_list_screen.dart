@@ -6,6 +6,7 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
+import '../../../../shared/widgets/unread_badges.dart';
 import '../../../../shared/widgets/uni_logo.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
@@ -647,20 +648,16 @@ class _ConversationListScreenState
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 24,
-              height: 24,
+            icon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
             ),
-            selectedIcon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 26,
-              height: 26,
+            selectedIcon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none),
+            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
             label: 'Notifications',
           ),
           NavigationDestination(

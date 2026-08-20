@@ -11,6 +11,7 @@ import 'home_screen.dart';
 import 'new_conversation_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
+import '../../../../shared/widgets/unread_badges.dart';
 
 /// Groupes d'étude et clubs. Les groupes affichés viennent de la table
 /// conversation via le provider déjà connecté au backend.
@@ -119,19 +120,18 @@ class GroupsScreen extends ConsumerWidget {
         destinations: [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Accueil'),
           NavigationDestination(
-            icon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 24,
-              height: 24,
+            icon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
             ),
-            selectedIcon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 26,
-              height: 26,
+            selectedIcon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
             ),
             label: 'Messages',
           ),
-          NavigationDestination(icon: Icon(Icons.notifications_none), label: 'Notifications'),
+          NavigationDestination(
+            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
+            label: 'Notifications',
+          ),
           NavigationDestination(icon: Icon(Icons.group), label: 'Groupes'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
         ],

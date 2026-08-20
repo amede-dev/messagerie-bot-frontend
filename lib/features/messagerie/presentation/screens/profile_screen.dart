@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/models/user_profile_model.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/file_upload_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/unread_badges.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import 'groups_screen.dart';
 import 'home_screen.dart';
@@ -28,6 +30,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl;
   bool _envoiPhotoEnCours = false;
   late final Future<UserProfileModel> _profil = _chargerProfil();
+
+  String? _normaliserPhotoUrl(String? valeur) {
+    if (valeur == null || valeur.trim().isEmpty) return null;
+
+    final url = valeur.trim();
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    // Une URL localhost enregistrée depuis un test local n'est pas accessible
+    // depuis le téléphone. On conserve son chemin et on le relie au backend.
+    if (uri.host == 'localhost' || uri.host == '127.0.0.1' || !uri.hasScheme) {
+      return '${AppConfig.apiBaseUrl}${uri.path}';
+    }
+
+    return url;
+  }
 
   Future<UserProfileModel> _chargerProfil() async {
     final response = await ApiClient.instance.getMonProfil();
@@ -89,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final profil = snapshot.data!;
-          final photoUrl = _photoUrl ?? profil.photoUrl;
+          final photoUrl = _normaliserPhotoUrl(_photoUrl ?? profil.photoUrl);
           return ListView(
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
             children: [
@@ -101,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 52,
                       backgroundColor: AppColors.primaryLight,
                       backgroundImage: _photoProfil == null
-                          ? (photoUrl == null ? null : NetworkImage(photoUrl))
+                          ? null
                           : FileImage(_photoProfil!),
                       child: _photoProfil == null
                           ? (photoUrl == null
@@ -110,7 +128,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: AppColors.primary,
                                     size: 52,
                                   )
-                                : null)
+                                : ClipOval(
+                                    child: Image.network(
+                                      photoUrl,
+                                      width: 104,
+                                      height: 104,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.person,
+                                        color: AppColors.primary,
+                                        size: 52,
+                                      ),
+                                    ),
+                                  ))
                           : null,
                     ),
                     Positioned(
@@ -232,20 +262,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 24,
-              height: 24,
+            icon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
             ),
-            selectedIcon: Image.asset(
-              'assets/images/messangeur.png',
-              width: 26,
-              height: 26,
+            selectedIcon: UnreadMessagesBadge(
+              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none),
+            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
             label: 'Notifications',
           ),
           NavigationDestination(
