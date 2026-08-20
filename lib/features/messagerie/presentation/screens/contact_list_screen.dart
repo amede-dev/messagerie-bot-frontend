@@ -10,8 +10,7 @@ import 'chat_screen.dart';
 /// Écran « Nouvelle discussion » : carnet de contacts affichant tous les
 /// utilisateurs de l'université (table `app_user`, peuplée à partir de
 /// `Liste_consolidee_ENI_sans_doublons.xlsx`), façon application de
-/// messagerie classique (recherche + liste triée et sectionnée par
-/// lettre).
+/// messagerie classique (recherche + liste triée).
 ///
 /// Sélectionner un contact récupère son identifiant (`AppUserModel.id`)
 /// et démarre — ou rouvre si elle existe déjà — la conversation privée
@@ -81,17 +80,6 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
     return _contacts
         .where((u) => u.nomComplet.toLowerCase().contains(q))
         .toList();
-  }
-
-  /// Regroupe les contacts filtrés par première lettre du nom, pour des
-  /// en-têtes de section (A, B, C…) comme dans un carnet de contacts.
-  Map<String, List<AppUserModel>> get _contactsParLettre {
-    final groupes = <String, List<AppUserModel>>{};
-    for (final u in _contactsFiltres) {
-      final lettre = u.nom.isNotEmpty ? u.nom[0].toUpperCase() : '#';
-      groupes.putIfAbsent(lettre, () => []).add(u);
-    }
-    return groupes;
   }
 
   /// Récupère l'identifiant du contact sélectionné et lance la
@@ -187,7 +175,11 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off, size: 48, color: AppColors.textSecondary),
+              const Icon(
+                Icons.cloud_off,
+                size: 48,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Le serveur met parfois jusqu\'à deux minutes à '
@@ -198,7 +190,10 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
               Text(
                 '$_erreur',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -216,40 +211,12 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
       return const Center(child: Text('Aucun contact trouvé'));
     }
 
-    final groupes = _contactsParLettre;
-    final lettres = groupes.keys.toList()..sort();
-
     return RefreshIndicator(
       onRefresh: _chargerContacts,
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: 8),
-        itemCount: lettres.length,
-        itemBuilder: (context, sectionIndex) {
-          final lettre = lettres[sectionIndex];
-          final contacts = groupes[lettre]!;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                color: AppColors.bgLight,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Text(
-                  lettre,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-              ...contacts.map(_ligneContact),
-            ],
-          );
-        },
+        itemCount: _contactsFiltres.length,
+        itemBuilder: (context, index) => _ligneContact(_contactsFiltres[index]),
       ),
     );
   }
@@ -259,9 +226,6 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
     return ListTile(
       leading: AvatarCircle(initiales: contact.initiales),
       title: Text(contact.nomComplet),
-      subtitle: contact.email != null && contact.email!.isNotEmpty
-          ? Text(contact.email!)
-          : null,
       trailing: enCours
           ? const SizedBox(
               width: 18,
