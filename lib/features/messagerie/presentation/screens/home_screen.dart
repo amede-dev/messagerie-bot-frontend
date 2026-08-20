@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -50,10 +51,6 @@ class HomeScreen extends ConsumerWidget {
             onSelected: (value) => _ouvrirEcran(context, value),
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'connexion', child: Text('Connexion')),
-              PopupMenuItem(
-                value: 'accueil',
-                child: Text("Accueil (Fil d'actualité)"),
-              ),
               PopupMenuItem(value: 'messagerie', child: Text('Messagerie')),
               PopupMenuItem(value: 'chat', child: Text('Chat 1-to-1')),
               PopupMenuItem(
@@ -81,26 +78,27 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-          _AssistantPromo(
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const BotChatScreen())),
-          ),
-          const SizedBox(height: 24),
-          _QuickAccess(
-            onAssistantTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const BotChatScreen())),
-            onConversationTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NewConversationScreen()),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _RecentMessages(
-            onViewAll: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ConversationListScreen()),
-            ),
-          ),
+              _AssistantPromo(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BotChatScreen()),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _QuickAccess(
+                onConversationTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewConversationScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _RecentMessages(
+                onViewAll: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ConversationListScreen(),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -164,9 +162,9 @@ class HomeScreen extends ConsumerWidget {
     };
 
     if (destination != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => destination),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => destination));
     }
   }
 }
@@ -240,12 +238,8 @@ class _AssistantPromo extends StatelessWidget {
 }
 
 class _QuickAccess extends StatelessWidget {
-  const _QuickAccess({
-    required this.onAssistantTap,
-    required this.onConversationTap,
-  });
+  const _QuickAccess({required this.onConversationTap});
 
-  final VoidCallback onAssistantTap;
   final VoidCallback onConversationTap;
 
   @override
@@ -260,14 +254,6 @@ class _QuickAccess extends StatelessWidget {
         const SizedBox(height: 14),
         Column(
           children: [
-            _QuickAccessCard(
-              icon: Icons.smart_toy_outlined,
-              title: 'Assistant Académique',
-              subtitle: 'Aide aux devoirs et recherche',
-              status: 'Toujours en ligne',
-              onTap: onAssistantTap,
-            ),
-            const SizedBox(height: 12),
             _QuickAccessCard(
               icon: Icons.add_comment_outlined,
               title: 'Nouvelle Conversation',
@@ -302,7 +288,9 @@ class _QuickAccessCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 180),
+        // Hauteur bornée indispensable ici : la carte est dans un
+        // SingleChildScrollView et contient un Spacer.
+        height: 180,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surfaceLight,
@@ -363,9 +351,7 @@ class _QuickAccessCard extends StatelessWidget {
 }
 
 class _RecentMessages extends ConsumerWidget {
-  const _RecentMessages({
-    required this.onViewAll,
-  });
+  const _RecentMessages({required this.onViewAll});
 
   final VoidCallback onViewAll;
 
@@ -422,6 +408,34 @@ class _RecentMessageCard extends StatelessWidget {
   final ConversationModel conversation;
   final VoidCallback onTap;
 
+  String _dateAffichee(DateTime date) {
+    final maintenant = DateTime.now();
+    final aujourdHui = DateTime(
+      maintenant.year,
+      maintenant.month,
+      maintenant.day,
+    );
+    final jourMessage = DateTime(date.year, date.month, date.day);
+    final difference = aujourdHui.difference(jourMessage).inDays;
+    final heure = DateFormat('HH:mm').format(date);
+    const jours = [
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche',
+    ];
+
+    if (difference == 0) return heure;
+    if (difference == 1) return 'Hier $heure';
+    if (difference < 7) {
+      return '${jours[date.weekday - 1]} $heure';
+    }
+    return DateFormat('dd/MM/yyyy HH:mm').format(date);
+  }
+
   @override
   Widget build(BuildContext context) {
     final initiales =
@@ -457,16 +471,35 @@ class _RecentMessageCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: AppColors.textPrimary),
         ),
-        trailing: conversation.nombreNonLus > 0
-            ? CircleAvatar(
-                radius: 10,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  '${conversation.nombreNonLus}',
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
-                ),
-              )
-            : null,
+        trailing: conversation.dernierMessage == null
+            ? null
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _dateAffichee(conversation.dernierMessage!.dateEnvoi),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
+                  if (conversation.nombreNonLus > 0) ...[
+                    const SizedBox(height: 5),
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundColor: AppColors.primary,
+                      child: Text(
+                        '${conversation.nombreNonLus}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
       ),
     );
   }

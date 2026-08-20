@@ -112,6 +112,8 @@ class ApiClient {
   // ---- Utilisateurs (pour choisir des participants) ----
   Future<Response> getUsers() => _dio.get('/api/users');
 
+  Future<Response> getMonProfil() => _dio.get('/api/users/me/profile');
+
   Future<Response> getNotifications() => _dio.get('/api/notifications');
 
   Future<Response> quitterConversation(String conversationId) =>

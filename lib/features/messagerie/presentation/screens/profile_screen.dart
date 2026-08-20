@@ -1,14 +1,43 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../core/models/user_profile_model.dart';
 import '../../../../core/network/auth_repository.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import 'conversation_list_screen.dart';
 import 'groups_screen.dart';
 import 'home_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _photoProfil;
+  late final Future<UserProfileModel> _profil = _chargerProfil();
+
+  Future<UserProfileModel> _chargerProfil() async {
+    final response = await ApiClient.instance.getMonProfil();
+    return UserProfileModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> _choisirPhotoProfil() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (!mounted || image == null) return;
+
+    setState(() => _photoProfil = File(image.path));
+  }
 
   Future<void> _deconnecter(BuildContext context) async {
     await AuthRepository().deconnexion();
@@ -23,95 +52,148 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-        children: [
-          const CircleAvatar(
-            radius: 42,
-            backgroundColor: AppColors.primary,
-            child: Icon(Icons.person, color: Colors.white, size: 42),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Mon profil universitaire',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(999),
+      body: FutureBuilder<UserProfileModel>(
+        future: _profil,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Erreur : ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final profil = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+            children: [
+              Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CircleAvatar(
+                      radius: 52,
+                      backgroundColor: AppColors.primaryLight,
+                      backgroundImage: _photoProfil == null
+                          ? null
+                          : FileImage(_photoProfil!),
+                      child: _photoProfil == null
+                          ? const Icon(
+                              Icons.person,
+                              color: AppColors.primary,
+                              size: 52,
+                            )
+                          : null,
+                    ),
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Material(
+                        color: Colors.white,
+                        shape: const CircleBorder(),
+                        elevation: 2,
+                        child: InkWell(
+                          onTap: _choisirPhotoProfil,
+                          customBorder: const CircleBorder(),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.camera_alt_outlined,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Text(
-                  'M1 Design Interactif',
-                  style: TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+              const SizedBox(height: 14),
+              Text(
+                profil.nomComplet.isEmpty
+                    ? 'Profil universitaire'
+                    : profil.nomComplet,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+              ),
+              if (profil.formation != null) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Text(
+                        profil.formation!,
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _ProfileStat(value: '${profil.amis}', label: 'Amis'),
+                      _ProfileDivider(),
+                      _ProfileStat(
+                        value: '${profil.groupes}',
+                        label: 'Groupes',
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: const [
-                  _ProfileStat(value: '142', label: 'Amis'),
-                  _ProfileDivider(),
-                  _ProfileStat(value: '8', label: 'Groupes'),
-                  _ProfileDivider(),
-                  _ProfileStat(value: '34', label: 'Posts'),
-                ],
+              const SizedBox(height: 28),
+              const Text(
+                'PARAMÈTRES',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          const Text(
-            'PARAMÈTRES',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Column(
-              children: [
-                _ProfileAction(
-                  icon: Icons.person_outline,
-                  label: 'Modifier le profil',
+              const SizedBox(height: 8),
+              Card(
+                child: Column(
+                  children: [
+                    _ProfileAction(
+                      icon: Icons.lock_outline,
+                      label: 'Paramètres de confidentialité',
+                    ),
+                    _ProfileAction(
+                      icon: Icons.notifications_none,
+                      label: 'Notifications',
+                    ),
+                  ],
                 ),
-                _ProfileAction(
-                  icon: Icons.lock_outline,
-                  label: 'Paramètres de confidentialité',
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => _deconnecter(context),
+                icon: const Icon(Icons.logout, color: AppColors.danger),
+                label: const Text(
+                  'Déconnexion',
+                  style: TextStyle(color: AppColors.danger),
                 ),
-                _ProfileAction(
-                  icon: Icons.notifications_none,
-                  label: 'Notifications',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () => _deconnecter(context),
-            icon: const Icon(Icons.logout, color: AppColors.danger),
-            label: const Text(
-              'Déconnexion',
-              style: TextStyle(color: AppColors.danger),
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 3,
