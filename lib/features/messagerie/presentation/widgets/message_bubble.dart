@@ -59,74 +59,78 @@ class MessageBubble extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
 
-          child: Column(
-            crossAxisAlignment: alignement,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: alignement,
 
-            children: [
-              if (afficherNomExpediteur && !estUtilisateurCourant)
-                Padding(
-                  padding: const EdgeInsets.only(left: 6, bottom: 2),
+              children: [
+                if (afficherNomExpediteur && !estUtilisateurCourant)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6, bottom: 2),
 
-                  child: Text(
-                    message.expediteurNom,
-
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.78,
-                ),
-
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-
-                  decoration: BoxDecoration(
-                    color: couleurFond,
-
-                    borderRadius: radius,
-                  ),
-
-                  child: _contenuMessage(context, couleurTexte),
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
-
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-
-                  children: [
-                    Text(
-                      DateFormat.Hm().format(message.dateEnvoi),
+                    child: Text(
+                      message.expediteurNom,
 
                       style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
                       ),
                     ),
+                  ),
 
-                    if (estUtilisateurCourant) ...[
-                      const SizedBox(width: 3),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.78,
+                  ),
 
-                      Icon(
-                        _iconeStatut(message.statut),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
 
-                        size: 14,
+                    decoration: BoxDecoration(
+                      color: couleurFond,
 
-                        color: _couleurStatut(message.statut),
-                      ),
-                    ],
-                  ],
+                      borderRadius: radius,
+                    ),
+
+                    child: _contenuMessage(context, couleurTexte),
+                  ),
                 ),
-              ),
-            ],
+
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
+
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+
+                    children: [
+                      Text(
+                        DateFormat.Hm().format(message.dateEnvoi),
+
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+
+                      if (estUtilisateurCourant) ...[
+                        const SizedBox(width: 3),
+
+                        Icon(
+                          _iconeStatut(message.statut),
+
+                          size: 14,
+
+                          color: _couleurStatut(message.statut),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
