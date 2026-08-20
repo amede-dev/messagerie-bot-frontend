@@ -649,15 +649,25 @@ class _ConversationListScreenState
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 24,
+                height: 24,
+              ),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 26,
+                height: 26,
+              ),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
+            icon: UnreadNotificationsBadge(
+              child: Icon(Icons.notifications_none),
+            ),
             label: 'Notifications',
           ),
           NavigationDestination(

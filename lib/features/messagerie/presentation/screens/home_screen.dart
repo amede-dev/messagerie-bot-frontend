@@ -101,15 +101,25 @@ class HomeScreen extends ConsumerWidget {
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 24,
+                height: 24,
+              ),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 26,
+                height: 26,
+              ),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
+            icon: UnreadNotificationsBadge(
+              child: Icon(Icons.notifications_none),
+            ),
             label: 'Notifications',
           ),
           NavigationDestination(
@@ -452,19 +462,31 @@ class _RecentMessageCard extends StatelessWidget {
           initiales: initiales,
           size: 46,
           estEnLigne: conversation.estEnLigne,
+          imageUrl: conversation.photoUrl,
         ),
         title: Text(
           conversation.nom,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
+          style: TextStyle(
+            color: conversation.nombreNonLus > 0
+                ? AppColors.textPrimary
+                : AppColors.textSecondary,
+            fontWeight: conversation.nombreNonLus > 0
+                ? FontWeight.w700
+                : FontWeight.w500,
           ),
         ),
         subtitle: Text(
           conversation.dernierMessage?.contenu ?? '',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: AppColors.textPrimary),
+          style: TextStyle(
+            color: conversation.nombreNonLus > 0
+                ? AppColors.textPrimary
+                : AppColors.textSecondary,
+            fontWeight: conversation.nombreNonLus > 0
+                ? FontWeight.w700
+                : FontWeight.w400,
+          ),
         ),
         trailing: conversation.dernierMessage == null
             ? null

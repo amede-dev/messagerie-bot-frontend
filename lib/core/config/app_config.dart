@@ -9,4 +9,17 @@ class AppConfig {
 
   static String get apiBaseUrl => '${useHttps ? "https" : "http"}://$apiHost';
   static String get wsBaseUrl => '${useHttps ? "wss" : "ws"}://$apiHost/ws';
+
+  static String? resolveMediaUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null) return null;
+
+    if (!uri.hasScheme || uri.host == 'localhost' || uri.host == '127.0.0.1') {
+      return '$apiBaseUrl${uri.path}';
+    }
+
+    return value.trim();
+  }
 }

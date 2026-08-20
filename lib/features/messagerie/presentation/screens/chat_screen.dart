@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/models/message_model.dart';
 import '../../../../core/network/auth_repository.dart';
+import '../../../../core/network/websocket_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
@@ -31,6 +34,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final AuthRepository _authRepository = AuthRepository();
 
   bool _miseAJourLectureEnCours = false;
+  bool _estEnTrainDecrire = false;
+  StreamSubscription<Map<String, dynamic>>? _typingSubscription;
+  Timer? _typingTimer;
 
   String? _utilisateurCourantId;
 
@@ -39,13 +45,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
 
     _chargerUtilisateurConnecte();
+    _ecouterFrappe();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _typingTimer?.cancel();
+    _typingSubscription?.cancel();
 
     super.dispose();
+  }
+
+  void _ecouterFrappe() {
+    _typingSubscription = WebSocketService.instance.typingStream.listen((data) {
+      if (!mounted ||
+          data['conversationId']?.toString() != widget.conversation.id) {
+        return;
+      }
+
+      _typingTimer?.cancel();
+      setState(() => _estEnTrainDecrire = true);
+      _typingTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _estEnTrainDecrire = false);
+      });
+    });
   }
 
   // ============================================================
@@ -156,7 +180,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   String _statutPresence() {
     if (widget.conversation.estEnLigne) {
-      return 'En ligne';
+      return 'Actif';
     }
 
     final derniereConnexion = widget.conversation.derniereConnexion;
@@ -170,18 +194,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final difference = maintenant.difference(derniereConnexion);
 
     if (difference.inMinutes < 1) {
-      return 'Vu à l’instant';
+      return 'Hors ligne à l’instant';
     }
 
     if (difference.inMinutes < 60) {
-      return 'Vu il y a ${difference.inMinutes} min';
+      return 'Hors ligne il y a ${difference.inMinutes} min';
     }
 
     if (difference.inHours < 24) {
-      return 'Vu il y a ${difference.inHours} h';
+      return 'Hors ligne il y a ${difference.inHours} h';
     }
 
-    return 'Vu le ${DateFormat('dd/MM à HH:mm').format(derniereConnexion)}';
+    return 'Hors ligne le ${DateFormat('dd/MM à HH:mm').format(derniereConnexion)}';
   }
 
   // ============================================================
@@ -453,6 +477,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 estEnLigne:
                     widget.conversation.type == ConversationType.privee &&
                     widget.conversation.estEnLigne,
+                imageUrl: widget.conversation.photoUrl,
               ),
 
               const SizedBox(width: 10),
@@ -473,10 +498,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
 
                     Text(
-                      _statutPresence(),
+                      _estEnTrainDecrire ? '...' : _statutPresence(),
                       style: TextStyle(
                         fontSize: 11,
-                        color: widget.conversation.enTrainDecrire
+                        color: _estEnTrainDecrire
                             ? AppColors.success
                             : AppColors.textSecondary,
                       ),
@@ -535,11 +560,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   }
                 });
 
-                if (_utilisateurCourantId != null && messages.any(
-                  (message) =>
-                      message.expediteurId != _utilisateurCourantId &&
-                      message.statut != MessageStatut.lu,
-                )) {
+                if (_utilisateurCourantId != null &&
+                    messages.any(
+                      (message) =>
+                          message.expediteurId != _utilisateurCourantId &&
+                          message.statut != MessageStatut.lu,
+                    )) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _marquerMessagesCommeLus();
                   });
@@ -584,7 +610,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
 
-          if (widget.conversation.enTrainDecrire)
+          if (_estEnTrainDecrire)
             TypingIndicator(nomUtilisateur: widget.conversation.nom),
 
           ChatInputBar(

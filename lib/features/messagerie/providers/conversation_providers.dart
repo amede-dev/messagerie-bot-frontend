@@ -174,9 +174,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     if (conversation.dernierMessage?.id == message.id) {
       if (conversation.dernierMessage?.statut != message.statut) {
         final nouvelleListe = List<ConversationModel>.from(actuel);
-        nouvelleListe[index] = conversation.copyWith(
-          dernierMessage: message,
-        );
+        nouvelleListe[index] = conversation.copyWith(dernierMessage: message);
         state = AsyncData(nouvelleListe);
       }
       return;
@@ -250,6 +248,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
         dernierMessage: conversation.dernierMessage,
         nombreNonLus: conversation.nombreNonLus,
         enTrainDecrire: conversation.enTrainDecrire,
+        photoUrl: conversation.photoUrl,
 
         utilisateurId: conversation.utilisateurId,
 

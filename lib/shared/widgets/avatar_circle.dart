@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/config/app_config.dart';
 
 // Avatar rond avec initiales ou icône, utilisé dans la liste des
 // conversations, le chat et l'écran "nouvelle conversation".
@@ -11,6 +12,7 @@ class AvatarCircle extends StatelessWidget {
   final Color foregroundColor;
   final double size;
   final bool estEnLigne;
+  final String? imageUrl;
 
   const AvatarCircle({
     super.key,
@@ -20,6 +22,7 @@ class AvatarCircle extends StatelessWidget {
     this.foregroundColor = AppColors.primary,
     this.size = 44,
     this.estEnLigne = false,
+    this.imageUrl,
   });
 
   @override
@@ -30,7 +33,12 @@ class AvatarCircle extends StatelessWidget {
         CircleAvatar(
           radius: size / 2,
           backgroundColor: backgroundColor,
-          child: icon != null
+          backgroundImage: imageUrl == null
+              ? null
+              : NetworkImage(AppConfig.resolveMediaUrl(imageUrl)!),
+          child: imageUrl != null
+              ? null
+              : icon != null
               ? Icon(icon, color: foregroundColor, size: size * 0.45)
               : Text(
                   initiales ?? '?',

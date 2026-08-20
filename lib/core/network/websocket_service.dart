@@ -262,6 +262,20 @@ class WebSocketService {
         }
       },
     );
+
+    _client?.subscribe(
+      destination: '/topic/conversation.$conversationId.typing',
+      callback: (frame) {
+        if (frame.body == null) return;
+
+        try {
+          final data = jsonDecode(frame.body!) as Map<String, dynamic>;
+          _typingController.add(data);
+        } catch (e) {
+          print('Erreur notification de frappe: $e');
+        }
+      },
+    );
   }
 
   // ==========================================================================

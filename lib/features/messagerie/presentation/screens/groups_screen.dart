@@ -112,28 +112,44 @@ class GroupsScreen extends ConsumerWidget {
           };
 
           if (destination != null) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => destination),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => destination));
           }
         },
         destinations: [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Accueil'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            label: 'Accueil',
+          ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 24, height: 24),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 24,
+                height: 24,
+              ),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: Image.asset('assets/images/messangeur.png', width: 26, height: 26),
+              child: Image.asset(
+                'assets/images/messangeur.png',
+                width: 26,
+                height: 26,
+              ),
             ),
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: UnreadNotificationsBadge(child: Icon(Icons.notifications_none)),
+            icon: UnreadNotificationsBadge(
+              child: Icon(Icons.notifications_none),
+            ),
             label: 'Notifications',
           ),
           NavigationDestination(icon: Icon(Icons.group), label: 'Groupes'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
         ],
       ),
     );
@@ -203,15 +219,14 @@ class _DiscoverGroup extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(members,
-                      style: const TextStyle(color: AppColors.textSecondary)),
+                  Text(
+                    members,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                 ],
               ),
             ),
-            OutlinedButton(
-              onPressed: () {},
-              child: const Text('Rejoindre'),
-            ),
+            OutlinedButton(onPressed: () {}, child: const Text('Rejoindre')),
           ],
         ),
       ),

@@ -41,6 +41,8 @@ class ConversationModel {
   //
   final String? utilisateurId;
 
+  final String? photoUrl;
+
   // ==========================================================================
   // DERNIÈRE CONNEXION
   // ==========================================================================
@@ -63,6 +65,8 @@ class ConversationModel {
     this.estEnLigne = false,
 
     this.utilisateurId,
+
+    this.photoUrl,
 
     this.derniereConnexion,
   });
@@ -121,6 +125,8 @@ class ConversationModel {
       // -----------------------------------------------------------------------
       utilisateurId: json['utilisateurId']?.toString(),
 
+      photoUrl: json['photoUrl'] as String?,
+
       // -----------------------------------------------------------------------
       // EN LIGNE
       // -----------------------------------------------------------------------
@@ -152,6 +158,8 @@ class ConversationModel {
 
     String? utilisateurId,
 
+    String? photoUrl,
+
     DateTime? derniereConnexion,
   }) {
     return ConversationModel(
@@ -174,6 +182,8 @@ class ConversationModel {
       estEnLigne: estEnLigne ?? this.estEnLigne,
 
       utilisateurId: utilisateurId ?? this.utilisateurId,
+
+      photoUrl: photoUrl ?? this.photoUrl,
 
       derniereConnexion: derniereConnexion ?? this.derniereConnexion,
     );

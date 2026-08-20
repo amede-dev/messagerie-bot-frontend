@@ -32,14 +32,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          ...List.generate(3, (i) => _buildDot(i)),
-          const SizedBox(width: 6),
-          Text(
-            '${widget.nomUtilisateur} écrit...',
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-          ),
-        ],
+        children: [...List.generate(3, (i) => _buildDot(i))],
       ),
     );
   }
