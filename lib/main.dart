@@ -5,7 +5,7 @@ import 'core/network/auth_repository.dart';
 import 'core/network/websocket_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/messagerie/presentation/screens/conversation_list_screen.dart';
+import 'features/messagerie/presentation/screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +22,10 @@ class MessagerieApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      // Le prototype Design.html est une interface claire. Ne pas reprendre
+      // le thème sombre du système : les textes noirs du prototype seraient
+      // illisibles sur fond noir.
+      themeMode: ThemeMode.light,
       home: const _StartupGate(),
     );
   }
@@ -57,6 +61,6 @@ class _StartupGateState extends State<_StartupGate> {
     if (_connecte == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return _connecte! ? const ConversationListScreen() : const LoginScreen();
+    return _connecte! ? const HomeScreen() : const LoginScreen();
   }
 }

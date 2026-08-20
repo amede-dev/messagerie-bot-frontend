@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/app_user_model.dart';
 import '../../../../core/models/message_model.dart';
 import '../../../../core/network/websocket_service.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 
@@ -107,7 +108,7 @@ class _ForwardMessageScreenState extends ConsumerState<ForwardMessageScreen> {
           if (_erreur != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(_erreur!, style: const TextStyle(color: Colors.red)),
+              child: Text(_erreur!, style: const TextStyle(color: AppColors.danger)),
             ),
           Expanded(
             child: _contacts.isEmpty && _erreur == null

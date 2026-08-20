@@ -485,24 +485,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
         actions: [
           IconButton(
-            tooltip: 'Appeler',
-            icon: const Icon(Icons.call_outlined),
-            onPressed: () {
-              _annoncerAction('L’appel audio');
-            },
-          ),
-
-          IconButton(
-            tooltip: 'Appel vidéo',
-            icon: const Icon(Icons.videocam_outlined),
-            onPressed: () {
-              _annoncerAction('L’appel vidéo');
-            },
-          ),
-
-          IconButton(
-            tooltip: 'Paramètres de la discussion',
-            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Options',
+            icon: const Icon(Icons.more_vert),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(

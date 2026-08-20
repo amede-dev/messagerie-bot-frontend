@@ -25,12 +25,21 @@ class ConversationTile extends StatelessWidget {
     final estBot = conversation.type == ConversationType.bot;
     final estNonLu = conversation.nombreNonLus > 0;
 
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      elevation: 0,
+      color: AppColors.surfaceLight,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFE2E2E2)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
           children: [
             estBot
                 ? const AvatarCircle(icon: Icons.smart_toy_outlined)
@@ -54,6 +63,7 @@ class ConversationTile extends StatelessWidget {
                           conversation.nom,
                           style: TextStyle(
                             fontSize: 15,
+                            color: AppColors.textPrimary,
                             fontWeight: estNonLu
                                 ? FontWeight.w700
                                 : FontWeight.w500,
@@ -132,6 +142,7 @@ class ConversationTile extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );

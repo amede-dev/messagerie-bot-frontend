@@ -544,7 +544,7 @@ class _Option extends StatelessWidget {
         radius: 18,
 
         backgroundColor: danger
-            ? const Color(0xFFFFEBEE)
+            ? AppColors.primaryLight
             : AppColors.primaryLight,
 
         child: Icon(

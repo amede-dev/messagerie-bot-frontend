@@ -13,7 +13,10 @@ import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
 import 'chat_screen.dart';
 import 'contact_list_screen.dart';
+import 'groups_screen.dart';
 import 'new_conversation_screen.dart';
+import 'home_screen.dart';
+import 'profile_screen.dart';
 
 /// Écran principal de la messagerie.
 ///
@@ -34,7 +37,7 @@ class _ConversationListScreenState
   final _authRepository = AuthRepository();
 
   String _recherche = '';
-  bool _rechercheOuverte = false;
+  String _filtre = 'Toutes';
 
   // ===========================================================================
   // INITIALISATION
@@ -49,17 +52,6 @@ class _ConversationListScreenState
   // ===========================================================================
   // RECHERCHE
   // ===========================================================================
-
-  void _basculerRecherche() {
-    setState(() {
-      _rechercheOuverte = !_rechercheOuverte;
-
-      if (!_rechercheOuverte) {
-        _rechercheController.clear();
-        _recherche = '';
-      }
-    });
-  }
 
   // ===========================================================================
   // UNI AI
@@ -322,7 +314,7 @@ class _ConversationListScreenState
               },
               child: const Text(
                 'Se déconnecter',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: AppColors.danger),
               ),
             ),
           ],
@@ -354,8 +346,6 @@ class _ConversationListScreenState
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationListProvider);
 
-    final contactsAsync = ref.watch(contactsUniversitairesProvider);
-
     return Scaffold(
       // ========================================================================
       // APP BAR
@@ -365,31 +355,9 @@ class _ConversationListScreenState
         titleSpacing: 16,
 
         title: const Text(
-          'Messages',
+          'Messagerie',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
         ),
-
-        actions: [
-          // ---------------------------------------------------------------
-          // RECHERCHE
-          // ---------------------------------------------------------------
-          IconButton(
-            icon: Icon(_rechercheOuverte ? Icons.close : Icons.search),
-            tooltip: 'Rechercher',
-            onPressed: _basculerRecherche,
-          ),
-
-          // ---------------------------------------------------------------
-          // DÉCONNEXION
-          // ---------------------------------------------------------------
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            tooltip: 'Se déconnecter',
-            onPressed: _seDeconnecter,
-          ),
-
-          const SizedBox(width: 4),
-        ],
       ),
 
       // ========================================================================
@@ -400,36 +368,62 @@ class _ConversationListScreenState
           // ---------------------------------------------------------------------
           // BARRE DE RECHERCHE
           // ---------------------------------------------------------------------
-          if (_rechercheOuverte)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: TextField(
-                controller: _rechercheController,
-                autofocus: true,
-                onChanged: (val) {
-                  setState(() {
-                    _recherche = val;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Rechercher',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                    borderSide: BorderSide.none,
-                  ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: TextField(
+              controller: _rechercheController,
+              onChanged: (val) => setState(() => _recherche = val),
+              style: const TextStyle(color: Colors.black, fontSize: 14),
+              cursorColor: AppColors.primary,
+              decoration: InputDecoration(
+                hintText: 'Rechercher...',
+                hintStyle: const TextStyle(color: Colors.black54, fontSize: 14),
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: AppColors.surfaceLight,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                  borderSide: const BorderSide(color: AppColors.primary),
                 ),
               ),
             ),
+          ),
 
-          // ---------------------------------------------------------------------
-          // CONTACTS RAPIDES
-          // ---------------------------------------------------------------------
-          _ContactsRapides(
-            contactsAsync: contactsAsync,
-            onContactTap: _demarrerConversationAvec,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: ['Toutes', 'Privées', 'Groupes', 'Bot Assistant']
+                  .map(
+                    (filtre) => Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _filtre = filtre),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          decoration: BoxDecoration(
+                            color: _filtre == filtre
+                                ? AppColors.primary
+                                : Colors.black,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            filtre,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: _filtre == filtre
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
 
           // ---------------------------------------------------------------------
@@ -457,7 +451,7 @@ class _ConversationListScreenState
                         const Icon(
                           Icons.cloud_off,
                           size: 48,
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                         ),
 
                         const SizedBox(height: 12),
@@ -474,7 +468,7 @@ class _ConversationListScreenState
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: AppColors.textSecondary,
                           ),
                         ),
 
@@ -503,38 +497,27 @@ class _ConversationListScreenState
                 // FILTRAGE DES CONVERSATIONS
                 // -----------------------------------------------------------------
 
-                final conversations = _recherche.isEmpty
-                    ? conversationsBrutes
-                    : conversationsBrutes
-                          .where(
-                            (conversation) => conversation.nom
-                                .toLowerCase()
-                                .contains(_recherche.toLowerCase()),
-                          )
-                          .toList();
-
-                // -----------------------------------------------------------------
-                // CONTACTS
-                // -----------------------------------------------------------------
-
-                final contacts =
-                    contactsAsync.valueOrNull ?? const <AppUserModel>[];
-
-                final contactsFiltres = _recherche.isEmpty
-                    ? contacts
-                    : contacts
-                          .where(
-                            (contact) => contact.nomComplet
-                                .toLowerCase()
-                                .contains(_recherche.toLowerCase()),
-                          )
-                          .toList();
+                final conversations = conversationsBrutes.where((conversation) {
+                  final correspondRecherche =
+                      _recherche.isEmpty ||
+                      conversation.nom.toLowerCase().contains(
+                        _recherche.toLowerCase(),
+                      );
+                  final correspondFiltre = switch (_filtre) {
+                    'Privées' => conversation.type == ConversationType.privee,
+                    'Groupes' => conversation.type == ConversationType.groupe,
+                    'Bot Assistant' =>
+                      conversation.type == ConversationType.bot,
+                    _ => true,
+                  };
+                  return correspondRecherche && correspondFiltre;
+                }).toList();
 
                 // -----------------------------------------------------------------
                 // AUCUN RÉSULTAT
                 // -----------------------------------------------------------------
 
-                if (conversations.isEmpty && contactsFiltres.isEmpty) {
+                if (conversations.isEmpty) {
                   return const Center(
                     child: Text('Aucun contact ou message trouvé'),
                   );
@@ -546,8 +529,6 @@ class _ConversationListScreenState
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(contactsUniversitairesProvider);
-
                     await ref
                         .read(conversationListProvider.notifier)
                         .rafraichir();
@@ -557,18 +538,6 @@ class _ConversationListScreenState
                     padding: const EdgeInsets.symmetric(vertical: 8),
 
                     children: [
-                      // ===========================================================
-                      // IMPORTANT :
-                      //
-                      // Il n'y a PLUS de ListTile Uni AI ici.
-                      //
-                      // Uni AI est uniquement le bouton flottant
-                      // au-dessus du bouton "+".
-                      // ===========================================================
-
-                      // ===========================================================
-                      // CONVERSATIONS
-                      // ===========================================================
                       ...conversations.map((conversation) {
                         return Column(
                           children: [
@@ -591,48 +560,6 @@ class _ConversationListScreenState
                           ],
                         );
                       }),
-
-                      // ===========================================================
-                      // TOUS LES CONTACTS
-                      // ===========================================================
-                      if (contactsFiltres.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
-                          child: Text(
-                            'Tous les contacts',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-
-                        ...contactsFiltres.map((contact) {
-                          return Column(
-                            children: [
-                              ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-
-                                leading: AvatarCircle(
-                                  initiales: contact.initiales,
-                                ),
-
-                                title: Text(
-                                  contact.nomComplet,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-
-                                onTap: () {
-                                  _demarrerConversationAvec(contact);
-                                },
-                              ),
-                            ],
-                          );
-                        }),
-                      ],
                     ],
                   ),
                 );
@@ -689,6 +616,42 @@ class _ConversationListScreenState
             shape: const CircleBorder(),
 
             child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 1,
+        onDestinationSelected: (index) {
+          if (index == 0) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (index == 2) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
+          } else if (index == 3) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.group_outlined),
+            label: 'Groupes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
           ),
         ],
       ),

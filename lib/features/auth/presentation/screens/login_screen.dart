@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/network/websocket_service.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../messagerie/presentation/screens/conversation_list_screen.dart';
+import '../../../messagerie/presentation/screens/home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authRepository = AuthRepository();
   final _emailController = TextEditingController();
   final _motDePasseController = TextEditingController();
+
   bool _chargement = false;
   bool _motDePasseVisible = false;
   String? _erreur;
@@ -32,22 +33,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _seConnecter() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _chargement = true;
       _erreur = null;
     });
+
     try {
       await _authRepository.login(
         _emailController.text.trim(),
         _motDePasseController.text,
       );
+
       await WebSocketService.instance.connect();
+
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const ConversationListScreen()),
-      );
+
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } on DioException catch (e) {
       final data = e.response?.data;
+
       setState(
         () => _erreur = data is Map && data['erreur'] is String
             ? data['erreur'] as String
@@ -58,26 +65,31 @@ class _LoginScreenState extends State<LoginScreen> {
         () => _erreur = 'Impossible de se connecter. Réessayez plus tard.',
       );
     } finally {
-      if (mounted) setState(() => _chargement = false);
+      if (mounted) {
+        setState(() => _chargement = false);
+      }
     }
   }
 
-  void _ouvrirRecuperation() => showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => const _RecuperationMotDePasseSheet(),
-  );
+  void _ouvrirRecuperation() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => const _RecuperationMotDePasseSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFE8F0FB), AppColors.bgLight],
+            colors: [AppColors.primaryLight, AppColors.bgLight],
           ),
         ),
         child: SafeArea(
@@ -90,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    side: const BorderSide(color: AppColors.primary),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(28),
@@ -100,19 +112,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const _EnteteAuthentification(),
+
                           const SizedBox(height: 32),
+
                           Text(
                             'Connexion',
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+
                           const SizedBox(height: 6),
+
                           const Text(
                             'Saisissez vos identifiants pour accéder à vos conversations.',
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
+
                           const SizedBox(height: 24),
+
                           TextFormField(
                             controller: _emailController,
                             style: styleTexteSaisi,
@@ -121,13 +139,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             autofillHints: const [AutofillHints.email],
                             decoration: decorationChamp(
                               'Adresse e-mail',
-                              Icons.alternate_email_outlined,
+                              Icons.email_outlined,
                             ),
                             validator: (v) => v == null || !v.contains('@')
                                 ? 'Saisissez une adresse e-mail valide.'
                                 : null,
                           ),
+
                           const SizedBox(height: 16),
+
                           TextFormField(
                             controller: _motDePasseController,
                             style: styleTexteSaisi,
@@ -149,16 +169,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined,
                                     ),
-                                    onPressed: () => setState(
-                                      () => _motDePasseVisible =
-                                          !_motDePasseVisible,
-                                    ),
+                                    onPressed: () {
+                                      setState(
+                                        () => _motDePasseVisible =
+                                            !_motDePasseVisible,
+                                      );
+                                    },
                                   ),
                                 ),
                             validator: (v) => v == null || v.isEmpty
                                 ? 'Le mot de passe est requis.'
                                 : null,
                           ),
+
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -166,9 +189,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: const Text('Mot de passe oublié ?'),
                             ),
                           ),
+
                           if (_erreur != null)
                             BanniereErreur(message: _erreur!),
+
                           const SizedBox(height: 12),
+
                           SizedBox(
                             height: 52,
                             child: FilledButton(
@@ -185,19 +211,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : const Text('Se connecter'),
                             ),
                           ),
+
                           const SizedBox(height: 24),
-                          const Divider(),
+
                           Wrap(
                             alignment: WrapAlignment.center,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Text('Nouveau sur la plateforme ?'),
                               TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const RegisterScreen(),
-                                  ),
-                                ),
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
                                 child: const Text('Créer un compte'),
                               ),
                             ],
@@ -216,106 +245,125 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-InputDecoration decorationChamp(String label, IconData icon) => InputDecoration(
-  labelText: label,
-  prefixIcon: Icon(icon),
-  prefixIconColor: AppColors.textMuted,
-  suffixIconColor: AppColors.textMuted,
-  labelStyle: const TextStyle(color: AppColors.textSecondary),
-  floatingLabelStyle: const TextStyle(
-    color: AppColors.primary,
-    fontWeight: FontWeight.w600,
-  ),
-  filled: true,
-  fillColor: const Color(0xFFF8FAFC),
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(14),
-    borderSide: BorderSide.none,
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(14),
-    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-  ),
-);
+InputDecoration decorationChamp(String label, IconData icon) {
+  return InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon),
+    prefixIconColor: AppColors.textMuted,
+    suffixIconColor: AppColors.textMuted,
+    labelStyle: const TextStyle(color: AppColors.textSecondary),
+    floatingLabelStyle: const TextStyle(
+      color: AppColors.primary,
+      fontWeight: FontWeight.w600,
+    ),
+    filled: true,
+    fillColor: AppColors.surfaceLight,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.primary),
+    ),
+  );
+}
 
 const styleTexteSaisi = TextStyle(color: AppColors.textPrimary, fontSize: 15);
 
 class _EnteteAuthentification extends StatelessWidget {
   const _EnteteAuthentification();
+
   @override
-  Widget build(BuildContext context) => const Column(
-    children: [
-      CircleAvatar(
-        radius: 32,
-        backgroundColor: AppColors.primary,
-        child: Icon(Icons.forum_outlined, color: Colors.white, size: 32),
-      ),
-      SizedBox(height: 14),
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: AppColors.primary,
+          child: Icon(Icons.forum_outlined, color: Colors.white, size: 32),
+        ),
+        SizedBox(height: 14),
       Text(
         'Messagerie & Bot',
         style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: AppColors.primary,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppColors.primary,
         ),
       ),
       SizedBox(height: 4),
       Text(
-        'Réseau universitaire',
-        style: TextStyle(color: AppColors.textSecondary),
+        'ENI University',
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class BanniereErreur extends StatelessWidget {
   const BanniereErreur({super.key, required this.message});
+
   final String message;
+
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFEBEE),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.error_outline, color: AppColors.danger),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(message, style: const TextStyle(color: AppColors.danger)),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.danger),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RecuperationMotDePasseSheet extends StatelessWidget {
   const _RecuperationMotDePasseSheet();
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Récupération du mot de passe',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'La récupération par e-mail sera disponible dès que le service de réinitialisation sera activé sur le serveur.',
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Récupération du mot de passe',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 12),
+          const Text(
+            'La récupération par e-mail sera disponible dès que le service de réinitialisation sera activé sur le serveur.',
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

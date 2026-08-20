@@ -187,7 +187,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+              const Icon(Icons.cloud_off, size: 48, color: AppColors.textSecondary),
               const SizedBox(height: 12),
               const Text(
                 'Le serveur met parfois jusqu\'à deux minutes à '
@@ -198,7 +198,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
               Text(
                 '$_erreur',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(

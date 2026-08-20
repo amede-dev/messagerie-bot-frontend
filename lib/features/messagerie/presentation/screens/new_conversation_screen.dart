@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/app_user_model.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../providers/conversation_providers.dart';
 
 // Écran de création d'une conversation de groupe.
@@ -22,7 +23,9 @@ class NewConversationScreen extends ConsumerStatefulWidget {
 
 class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
   final _nomController = TextEditingController();
+  final _rechercheController = TextEditingController();
   final Set<String> _participantsSelectionnes = {};
+  String _recherche = '';
   bool _enCours = false;
   bool _chargementContacts = true;
   List<AppUserModel> _contactsDisponibles = [];
@@ -31,6 +34,21 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
   void initState() {
     super.initState();
     _chargerContacts();
+  }
+
+  @override
+  void dispose() {
+    _nomController.dispose();
+    _rechercheController.dispose();
+    super.dispose();
+  }
+
+  List<AppUserModel> get _contactsFiltres {
+    final recherche = _recherche.trim().toLowerCase();
+    if (recherche.isEmpty) return _contactsDisponibles;
+    return _contactsDisponibles
+        .where((contact) => contact.nomComplet.toLowerCase().contains(recherche))
+        .toList();
   }
 
   Future<void> _chargerContacts() async {
@@ -94,7 +112,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Nouveau groupe'),
+        title: const Text('Nouvelle discussion'),
         actions: [
           TextButton(
             onPressed: _enCours ? null : _creerGroupe,
@@ -114,6 +132,21 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 TextField(
+                  controller: _rechercheController,
+                  onChanged: (value) => setState(() => _recherche = value),
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un nom ou un cours...',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: AppColors.surfaceLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
                   controller: _nomController,
                   decoration: const InputDecoration(
                     labelText: 'Nom du groupe',
@@ -123,17 +156,20 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'Ajouter des participants (${_participantsSelectionnes.length} sélectionnés)',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 if (_contactsDisponibles.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Text(
                       'Aucun autre utilisateur trouvé pour le moment.',
-                      style: TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
-                ..._contactsDisponibles.map(
+                ..._contactsFiltres.map(
                   (u) => CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _participantsSelectionnes.contains(u.id),

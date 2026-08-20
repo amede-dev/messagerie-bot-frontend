@@ -1,0 +1,473 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/models/conversation_model.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/avatar_circle.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../bot/presentation/screens/bot_chat_screen.dart';
+import '../../providers/conversation_providers.dart';
+import 'conversation_list_screen.dart';
+import 'groups_screen.dart';
+import 'new_conversation_screen.dart';
+import 'notifications_screen.dart';
+import 'profile_screen.dart';
+
+class HomeScreen extends ConsumerWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: const Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Réseau Social Universitaire ENI',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
+            ),
+            SizedBox(width: 8),
+            ClipOval(
+              child: Image(
+                image: AssetImage('assets/images/logo_eni.jpeg'),
+                width: 30,
+                height: 30,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Accès rapide — tous les écrans',
+            icon: const Icon(Icons.apps),
+            onSelected: (value) => _ouvrirEcran(context, value),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'connexion', child: Text('Connexion')),
+              PopupMenuItem(
+                value: 'accueil',
+                child: Text("Accueil (Fil d'actualité)"),
+              ),
+              PopupMenuItem(value: 'messagerie', child: Text('Messagerie')),
+              PopupMenuItem(value: 'chat', child: Text('Chat 1-to-1')),
+              PopupMenuItem(
+                value: 'notifications',
+                child: Text('Notifications'),
+              ),
+              PopupMenuItem(
+                value: 'nouvelle',
+                child: Text('Nouvelle conversation'),
+              ),
+              PopupMenuItem(value: 'privees', child: Text('Messages privés')),
+              PopupMenuItem(value: 'groupes', child: Text('Groupes')),
+              PopupMenuItem(value: 'profil', child: Text('Profil')),
+              PopupMenuItem(
+                value: 'assistant',
+                child: Text('Assistant Bot (IA)'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+          _AssistantPromo(
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const BotChatScreen())),
+          ),
+          const SizedBox(height: 24),
+          _QuickAccess(
+            onAssistantTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const BotChatScreen())),
+            onConversationTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NewConversationScreen()),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _RecentMessages(
+            onViewAll: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ConversationListScreen()),
+            ),
+          ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (index) {
+          _ouvrirNavigation(context, index);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Messages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.group_outlined),
+            label: 'Groupes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _ouvrirNavigation(BuildContext context, int index) {
+    final destination = switch (index) {
+      1 => const ConversationListScreen(),
+      2 => const GroupsScreen(),
+      3 => const ProfileScreen(),
+      _ => null,
+    };
+
+    if (destination != null) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => destination));
+    }
+  }
+
+  static void _ouvrirEcran(BuildContext context, String value) {
+    final destination = switch (value) {
+      'connexion' => const LoginScreen(),
+      'accueil' => const HomeScreen(),
+      'messagerie' => const ConversationListScreen(),
+      'chat' => const ConversationListScreen(),
+      'notifications' => const NotificationsScreen(),
+      'nouvelle' => const NewConversationScreen(),
+      'privees' => const ConversationListScreen(),
+      'groupes' => const GroupsScreen(),
+      'profil' => const ProfileScreen(),
+      'assistant' => const BotChatScreen(),
+      _ => null,
+    };
+
+    if (destination != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    }
+  }
+}
+
+class _AssistantPromo extends StatelessWidget {
+  const _AssistantPromo({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E2E2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 26,
+                backgroundColor: AppColors.primary,
+                child: Icon(Icons.smart_toy, color: Colors.white),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Besoin d’aide pour vos cours ?',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Demandez à UniBot, votre assistant académique 24/7.',
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onTap,
+              child: const Text('Démarrer'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAccess extends StatelessWidget {
+  const _QuickAccess({
+    required this.onAssistantTap,
+    required this.onConversationTap,
+  });
+
+  final VoidCallback onAssistantTap;
+  final VoidCallback onConversationTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Accès Rapide',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 14),
+        Column(
+          children: [
+            _QuickAccessCard(
+              icon: Icons.smart_toy_outlined,
+              title: 'Assistant Académique',
+              subtitle: 'Aide aux devoirs et recherche',
+              status: 'Toujours en ligne',
+              onTap: onAssistantTap,
+            ),
+            const SizedBox(height: 12),
+            _QuickAccessCard(
+              icon: Icons.add_comment_outlined,
+              title: 'Nouvelle Conversation',
+              subtitle: "Rechercher dans l'annuaire",
+              onTap: onConversationTap,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickAccessCard extends StatelessWidget {
+  const _QuickAccessCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.status,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? status;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 180),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E2E2)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primaryLight,
+                  child: Icon(icon, color: AppColors.primary),
+                ),
+                if (status != null)
+                  Flexible(
+                    child: Text(
+                      status!,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentMessages extends ConsumerWidget {
+  const _RecentMessages({
+    required this.onViewAll,
+  });
+
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conversationsAsync = ref.watch(conversationListProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Messages Récents',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            TextButton(onPressed: onViewAll, child: const Text('Voir tout')),
+          ],
+        ),
+        conversationsAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => Text('Erreur : $error'),
+          data: (conversations) {
+            final recents = conversations.take(3).toList();
+
+            if (recents.isEmpty) {
+              return const Text('Aucun message récent.');
+            }
+
+            return Column(
+              children: recents
+                  .map(
+                    (conversation) => _RecentMessageCard(
+                      conversation: conversation,
+                      onTap: onViewAll,
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentMessageCard extends StatelessWidget {
+  const _RecentMessageCard({required this.conversation, required this.onTap});
+
+  final ConversationModel conversation;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final initiales =
+        conversation.avatarInitiales ??
+        (conversation.nom.isNotEmpty ? conversation.nom[0] : '?');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: AppColors.surfaceLight,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Color(0xFFE2E2E2)),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: AvatarCircle(
+          initiales: initiales,
+          size: 46,
+          estEnLigne: conversation.estEnLigne,
+        ),
+        title: Text(
+          conversation.nom,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        subtitle: Text(
+          conversation.dernierMessage?.contenu ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        trailing: conversation.nombreNonLus > 0
+            ? CircleAvatar(
+                radius: 10,
+                backgroundColor: AppColors.primary,
+                child: Text(
+                  '${conversation.nombreNonLus}',
+                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+}

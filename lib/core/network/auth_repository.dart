@@ -29,6 +29,8 @@ class AuthRepository {
     required String email,
     required String motDePasse,
     required String role,
+    required String parcours,
+    required String niveau,
   }) async {
     final response = await _api.inscrire(
       nom: nom,
@@ -36,6 +38,8 @@ class AuthRepository {
       email: email,
       motDePasse: motDePasse,
       role: role,
+      parcours: parcours,
+      niveau: niveau,
     );
 
     await _enregistrerToken(response.data);

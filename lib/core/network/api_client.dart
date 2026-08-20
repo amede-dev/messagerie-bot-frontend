@@ -50,6 +50,8 @@ class ApiClient {
     required String email,
     required String motDePasse,
     required String role,
+    required String parcours,
+    required String niveau,
   }) => _dio.post(
     '/api/auth/register',
     data: {
@@ -58,6 +60,8 @@ class ApiClient {
       'email': email,
       'motDePasse': motDePasse,
       'role': role,
+      'parcours': parcours,
+      'niveau': niveau,
     },
   );
 
@@ -107,6 +111,8 @@ class ApiClient {
 
   // ---- Utilisateurs (pour choisir des participants) ----
   Future<Response> getUsers() => _dio.get('/api/users');
+
+  Future<Response> getNotifications() => _dio.get('/api/notifications');
 
   Future<Response> quitterConversation(String conversationId) =>
       _dio.delete('/api/conversations/$conversationId');

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Icône ronde de l'assistant "Uni" : dégradé + symbole, dans l'esprit
-/// des icônes d'assistants IA des messageries grand public, mais avec
-/// une identité visuelle propre à l'application (bleu universitaire).
+/// Icône ronde de l'assistant "Uni" dans la palette ENI.
 class UniLogo extends StatelessWidget {
   final double size;
 
@@ -20,7 +18,7 @@ class UniLogo extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6EA8FE), AppColors.primary, Color(0xFF17335C)],
+          colors: [AppColors.primary, Colors.black],
         ),
         boxShadow: [
           BoxShadow(

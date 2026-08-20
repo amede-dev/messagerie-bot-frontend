@@ -84,6 +84,29 @@ class BotChatScreen extends ConsumerWidget {
                     },
                   ),
           ),
+          if (entries.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryLight,
+                border: Border(top: BorderSide(color: AppColors.primary)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.support_agent, size: 18, color: AppColors.primary),
+                  SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Session transférée à un conseiller humain',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ChatInputBar(onSend: notifier.envoyer, afficherActionsMedia: false),
         ],
       ),
