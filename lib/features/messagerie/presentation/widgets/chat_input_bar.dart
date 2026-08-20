@@ -17,6 +17,7 @@ class ChatInputBar extends StatefulWidget {
   final VoidCallback? onStopVocal;
   final VoidCallback? onDeleteVocal;
   final VoidCallback? onSendVocal;
+  final bool envoiVocalEnCours;
 
   const ChatInputBar({
     super.key,
@@ -31,6 +32,7 @@ class ChatInputBar extends StatefulWidget {
     this.onStopVocal,
     this.onDeleteVocal,
     this.onSendVocal,
+    this.envoiVocalEnCours = false,
   });
 
   @override
@@ -162,8 +164,16 @@ class _ChatInputBarState extends State<ChatInputBar> {
         ),
         IconButton(
           tooltip: 'Envoyer le vocal',
-          onPressed: widget.vocalEnCours ? null : widget.onSendVocal,
-          icon: const Icon(Icons.send, color: AppColors.primary),
+          onPressed: widget.vocalEnCours || widget.envoiVocalEnCours
+              ? null
+              : widget.onSendVocal,
+          icon: widget.envoiVocalEnCours
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.send, color: AppColors.primary),
         ),
       ],
     );

@@ -39,6 +39,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _miseAJourLectureEnCours = false;
   bool _estEnTrainDecrire = false;
   bool _enregistrementVocal = false;
+  bool _envoiVocalEnCours = false;
   String? _fichierVocalEnregistre;
   Duration _dureeVocale = Duration.zero;
   bool _positionInitialeAppliquee = false;
@@ -222,15 +223,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _envoyerVocalEnregistre() async {
     final chemin = _fichierVocalEnregistre;
-    if (chemin == null) return;
-    await ref
-        .read(chatMessagesProvider(widget.conversation.id).notifier)
-        .envoyerFichier(File(chemin), MessageType.audio);
-    if (!mounted) return;
-    setState(() {
-      _fichierVocalEnregistre = null;
-      _dureeVocale = Duration.zero;
-    });
+    if (chemin == null || _envoiVocalEnCours) return;
+
+    final fichier = File(chemin);
+    if (!await fichier.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Le fichier vocal est introuvable.')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _envoiVocalEnCours = true);
+
+    try {
+      await ref
+          .read(chatMessagesProvider(widget.conversation.id).notifier)
+          .envoyerFichier(fichier, MessageType.audio);
+
+      if (!mounted) return;
+      setState(() {
+        _fichierVocalEnregistre = null;
+        _dureeVocale = Duration.zero;
+        _envoiVocalEnCours = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _envoiVocalEnCours = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Échec de l’envoi vocal : $e')));
+    }
   }
 
   Future<void> _supprimerVocalEnregistre() async {
@@ -725,6 +749,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onStopVocal: _arreterEnregistrementVocal,
             onDeleteVocal: _supprimerVocalEnregistre,
             onSendVocal: _envoyerVocalEnregistre,
+            envoiVocalEnCours: _envoiVocalEnCours,
           ),
         ],
       ),
