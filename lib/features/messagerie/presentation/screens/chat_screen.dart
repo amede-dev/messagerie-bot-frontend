@@ -405,6 +405,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
 
+              if (estUtilisateurCourant && message.type == MessageType.texte)
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Modifier'),
+                  onTap: () => Navigator.of(context).pop('modifier'),
+                ),
+
               if (estUtilisateurCourant)
                 ListTile(
                   leading: const Icon(
@@ -455,9 +462,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
 
+    if (action == 'modifier') {
+      await _modifierMessage(message);
+      return;
+    }
+
     // SUPPRIMER
     if (action == 'supprimer') {
       await _choisirSuppressionMessage(message);
+    }
+  }
+
+  Future<void> _modifierMessage(MessageModel message) async {
+    final controller = TextEditingController(text: message.contenu);
+    final contenu = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifier le message'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 5,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(hintText: 'Votre message'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final texte = controller.text.trim();
+              if (texte.isNotEmpty) Navigator.of(context).pop(texte);
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (!mounted || contenu == null || contenu == message.contenu) return;
+
+    try {
+      await ref
+          .read(chatMessagesProvider(widget.conversation.id).notifier)
+          .modifierMessage(message.id, contenu);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de modifier le message : $e')),
+      );
     }
   }
 

@@ -11,6 +11,7 @@ import 'package:video_player/video_player.dart';
 import '../../../../core/models/message_model.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/avatar_circle.dart';
 
 class MessageBubble extends StatelessWidget {
   final MessageModel message;
@@ -89,22 +90,34 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
 
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.78,
-                  ),
-
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-
-                    decoration: BoxDecoration(
-                      color: couleurFond,
-
-                      borderRadius: radius,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (!estUtilisateurCourant) ...[
+                      AvatarCircle(
+                        initiales: message.expediteurNom.isNotEmpty
+                            ? message.expediteurNom.substring(0, 1)
+                            : '?',
+                        imageUrl: message.expediteurPhotoUrl,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.70,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: couleurFond,
+                          borderRadius: radius,
+                        ),
+                        child: _contenuMessage(context, couleurTexte),
+                      ),
                     ),
-
-                    child: _contenuMessage(context, couleurTexte),
-                  ),
+                  ],
                 ),
 
                 Padding(

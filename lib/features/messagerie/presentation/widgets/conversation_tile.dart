@@ -60,16 +60,33 @@ class ConversationTile extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            conversation.nom,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
-                              fontWeight: estNonLu
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  conversation.nom,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: AppColors.textPrimary,
+                                    fontWeight: estNonLu
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (conversation.estEnLigne) ...[
+                                const SizedBox(width: 5),
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         if (conversation.dernierMessage != null)
@@ -101,7 +118,7 @@ class ConversationTile extends StatelessWidget {
                                 ? 'en train d\'écrire...'
                                 : (conversation.dernierMessage?.contenu ?? ''),
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: estNonLu ? 14 : 13,
                               color: conversation.enTrainDecrire
                                   ? AppColors.primary
                                   : (estNonLu

@@ -15,12 +15,27 @@ import '../../../../shared/widgets/unread_badges.dart';
 
 /// Groupes d'étude et clubs. Les groupes affichés viennent de la table
 /// conversation via le provider déjà connecté au backend.
-class GroupsScreen extends ConsumerWidget {
+class GroupsScreen extends ConsumerStatefulWidget {
   const GroupsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GroupsScreen> createState() => _GroupsScreenState();
+}
+
+class _GroupsScreenState extends ConsumerState<GroupsScreen> {
+  final _rechercheController = TextEditingController();
+  String _recherche = '';
+
+  @override
+  void dispose() {
+    _rechercheController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final conversations = ref.watch(conversationListProvider);
+    final groupesDisponibles = ref.watch(groupesDisponiblesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,6 +64,15 @@ class GroupsScreen extends ConsumerWidget {
                 'Trouvez votre communauté étudiante.',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _rechercheController,
+                onChanged: (value) => setState(() => _recherche = value),
+                decoration: const InputDecoration(
+                  hintText: 'Rechercher un groupe...',
+                  prefixIcon: Icon(Icons.search),
+                ),
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Mes Groupes',
@@ -74,20 +98,65 @@ class GroupsScreen extends ConsumerWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
-              const _DiscoverGroup(
-                title: 'Société de Débat',
-                members: '89 membres',
-                icon: Icons.forum_outlined,
-              ),
-              const _DiscoverGroup(
-                title: 'Club Littéraire',
-                members: '45 membres',
-                icon: Icons.menu_book_outlined,
-              ),
-              const _DiscoverGroup(
-                title: 'Mathématiques Avancées',
-                members: '12 membres',
-                icon: Icons.functions,
+              groupesDisponibles.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, _) => Text('Erreur : $error'),
+                data: (groupes) {
+                  final recherche = _recherche.trim().toLowerCase();
+                  final groupesFiltres = recherche.isEmpty
+                      ? groupes
+                      : groupes
+                            .where((groupe) => groupe.nom.toLowerCase().contains(recherche))
+                            .toList();
+
+                  return groupesFiltres.isEmpty
+                    ? const Text(
+                        'Aucun groupe public disponible pour le moment.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      )
+                    : Column(
+                        children: groupesFiltres.map((groupe) {
+                          return _DiscoverGroup(
+                            title: groupe.nom,
+                            members: '${groupe.nombreMembres} membres',
+                            icon: Icons.groups_outlined,
+                            onJoin: () async {
+                              try {
+                                final conversation = await ref
+                                    .read(conversationRepositoryProvider)
+                                    .rejoindreGroupe(groupe.id);
+                                ref.invalidate(groupesDisponiblesProvider);
+                                await ref
+                                    .read(conversationListProvider.notifier)
+                                    .rafraichir();
+                                if (!context.mounted) return;
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatScreen(
+                                      conversation: conversation,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Impossible de rejoindre le groupe : $e',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        }).toList(),
+                      );
+                },
               ),
             ],
           );
@@ -181,11 +250,13 @@ class _DiscoverGroup extends StatelessWidget {
     required this.title,
     required this.members,
     required this.icon,
+    required this.onJoin,
   });
 
   final String title;
   final String members;
   final IconData icon;
+  final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +297,10 @@ class _DiscoverGroup extends StatelessWidget {
                 ],
               ),
             ),
-            OutlinedButton(onPressed: () {}, child: const Text('Rejoindre')),
+            OutlinedButton(
+              onPressed: onJoin,
+              child: const Text('Rejoindre'),
+            ),
           ],
         ),
       ),

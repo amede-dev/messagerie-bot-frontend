@@ -68,6 +68,12 @@ class ApiClient {
   // ---- Conversations ----
   Future<Response> getConversations() => _dio.get('/api/conversations');
 
+  Future<Response> getGroupesDisponibles() =>
+      _dio.get('/api/conversations/groupes/disponibles');
+
+  Future<Response> rejoindreGroupe(String conversationId) =>
+      _dio.post('/api/conversations/$conversationId/join');
+
   Future<Response> getMessages(String conversationId, {int page = 0}) =>
       _dio.get(
         '/api/conversations/$conversationId/messages',
@@ -94,6 +100,9 @@ class ApiClient {
 
   Future<Response> marquerStatut(String messageId, String statut) =>
       _dio.put('/api/messages/$messageId/status', data: {'statut': statut});
+
+  Future<Response> modifierMessage(String messageId, String contenu) =>
+      _dio.put('/api/messages/$messageId', data: {'contenu': contenu});
 
   Future<Response> signalerMessage(String messageId, String motif) =>
       _dio.post('/api/messages/$messageId/report', data: {'motif': motif});

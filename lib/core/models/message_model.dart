@@ -8,6 +8,7 @@ class MessageModel {
   final String conversationId;
   final String expediteurId;
   final String expediteurNom;
+  final String? expediteurPhotoUrl;
   final String contenu;
   final MessageType type;
   final MessageStatut statut;
@@ -19,6 +20,7 @@ class MessageModel {
     required this.conversationId,
     required this.expediteurId,
     required this.expediteurNom,
+    this.expediteurPhotoUrl,
     required this.contenu,
     required this.type,
     required this.statut,
@@ -43,6 +45,8 @@ class MessageModel {
       expediteurId: json['expediteurId'].toString(),
 
       expediteurNom: json['expediteurNom'] as String? ?? '',
+
+      expediteurPhotoUrl: json['expediteurPhotoUrl'] as String?,
 
       contenu: json['contenu'] as String? ?? '',
 
@@ -108,6 +112,7 @@ class MessageModel {
       conversationId: conversationId,
       expediteurId: expediteurId,
       expediteurNom: expediteurNom,
+      expediteurPhotoUrl: expediteurPhotoUrl,
 
       contenu: contenu ?? this.contenu,
 

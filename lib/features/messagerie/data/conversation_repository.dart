@@ -2,6 +2,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
+import '../../../core/models/group_discovery_model.dart';
 import '../../../core/network/api_client.dart';
 
 class ConversationRepository {
@@ -15,6 +16,22 @@ class ConversationRepository {
     return data
         .map((json) => ConversationModel.fromJson(json as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<GroupDiscoveryModel>> fetchGroupesDisponibles() async {
+    if (AppConfig.useMockBackend) return const [];
+    final response = await _api.getGroupesDisponibles();
+    return (response.data as List)
+        .map((json) => GroupDiscoveryModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ConversationModel> rejoindreGroupe(String conversationId) async {
+    if (AppConfig.useMockBackend) {
+      throw UnsupportedError('Adhésion indisponible en mode mock');
+    }
+    final response = await _api.rejoindreGroupe(conversationId);
+    return ConversationModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<List<MessageModel>> fetchMessages(
@@ -98,6 +115,14 @@ class ConversationRepository {
   Future<void> marquerMessageLu(String messageId) async {
     if (AppConfig.useMockBackend) return;
     await _api.marquerStatut(messageId, 'LU');
+  }
+
+  Future<MessageModel> modifierMessage(String messageId, String contenu) async {
+    if (AppConfig.useMockBackend) {
+      throw UnsupportedError('Modification indisponible en mode mock');
+    }
+    final response = await _api.modifierMessage(messageId, contenu);
+    return MessageModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<MessageModel> envoyerMessage(

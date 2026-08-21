@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
+import '../../../core/models/group_discovery_model.dart';
 import '../../../core/network/websocket_service.dart';
 import '../../../core/network/auth_repository.dart';
 import '../data/conversation_repository.dart';
@@ -42,6 +43,11 @@ final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
 
 final participantsGroupesProvider =
     StateProvider<Map<String, List<AppUserModel>>>((ref) => {});
+
+final groupesDisponiblesProvider =
+    FutureProvider<List<GroupDiscoveryModel>>((ref) async {
+  return ref.read(conversationRepositoryProvider).fetchGroupesDisponibles();
+});
 
 // =============================================================================
 // LISTE DES CONVERSATIONS
@@ -175,7 +181,11 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     final conversation = actuel[index];
 
     if (conversation.dernierMessage?.id == message.id) {
-      if (conversation.dernierMessage?.statut != message.statut) {
+      final precedent = conversation.dernierMessage;
+      if (precedent?.statut != message.statut ||
+          precedent?.contenu != message.contenu ||
+          precedent?.type != message.type ||
+          precedent?.expediteurPhotoUrl != message.expediteurPhotoUrl) {
         final nouvelleListe = List<ConversationModel>.from(actuel);
         nouvelleListe[index] = conversation.copyWith(dernierMessage: message);
         state = AsyncData(nouvelleListe);
@@ -410,7 +420,11 @@ class ChatMessagesNotifier
     final indexExistant = actuel.indexWhere((m) => m.id == message.id);
 
     if (indexExistant != -1) {
-      if (actuel[indexExistant].statut != message.statut) {
+      final precedent = actuel[indexExistant];
+      if (precedent.statut != message.statut ||
+          precedent.contenu != message.contenu ||
+          precedent.type != message.type ||
+          precedent.expediteurPhotoUrl != message.expediteurPhotoUrl) {
         final miseAJour = List<MessageModel>.from(actuel);
         miseAJour[indexExistant] = message;
         state = AsyncData(miseAJour);
@@ -441,6 +455,13 @@ class ChatMessagesNotifier
     final message = await ref
         .read(conversationRepositoryProvider)
         .envoyerMessage(arg, texte);
+    _ajouterMessage(message);
+  }
+
+  Future<void> modifierMessage(String messageId, String contenu) async {
+    final message = await ref
+        .read(conversationRepositoryProvider)
+        .modifierMessage(messageId, contenu);
     _ajouterMessage(message);
   }
 
