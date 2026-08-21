@@ -13,7 +13,6 @@ import 'conversation_list_screen.dart';
 import 'contact_list_screen.dart';
 import 'groups_screen.dart';
 import 'new_conversation_screen.dart';
-import 'notifications_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -115,12 +114,6 @@ class HomeScreen extends ConsumerWidget {
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: UnreadNotificationsBadge(
-              child: Icon(Icons.notifications_none),
-            ),
-            label: 'Notifications',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.group_outlined),
             label: 'Groupes',
           ),
@@ -136,9 +129,8 @@ class HomeScreen extends ConsumerWidget {
   static void _ouvrirNavigation(BuildContext context, int index) {
     final destination = switch (index) {
       1 => const ConversationListScreen(),
-      2 => const NotificationsScreen(),
-      3 => const GroupsScreen(),
-      4 => const ProfileScreen(),
+      2 => const GroupsScreen(),
+      3 => const ProfileScreen(),
       _ => null,
     };
 
@@ -205,7 +197,6 @@ class HomeScreen extends ConsumerWidget {
       'accueil' => const HomeScreen(),
       'messagerie' => const ConversationListScreen(),
       'chat' => const ConversationListScreen(),
-      'notifications' => const NotificationsScreen(),
       'nouvelle' => const NewConversationScreen(),
       'privees' => const ConversationListScreen(initialFilter: 'Privées'),
       'groupes' => const GroupsScreen(),

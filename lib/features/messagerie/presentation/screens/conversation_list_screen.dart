@@ -16,7 +16,6 @@ import 'chat_screen.dart';
 import 'contact_list_screen.dart';
 import 'groups_screen.dart';
 import 'new_conversation_screen.dart';
-import 'notifications_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
@@ -635,14 +634,10 @@ class _ConversationListScreenState
               context,
             ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (index == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-            );
-          } else if (index == 3) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
-          } else if (index == 4) {
+          } else if (index == 3) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
@@ -669,12 +664,6 @@ class _ConversationListScreenState
               ),
             ),
             label: 'Messages',
-          ),
-          NavigationDestination(
-            icon: UnreadNotificationsBadge(
-              child: Icon(Icons.notifications_none),
-            ),
-            label: 'Notifications',
           ),
           NavigationDestination(
             icon: Icon(Icons.group_outlined),

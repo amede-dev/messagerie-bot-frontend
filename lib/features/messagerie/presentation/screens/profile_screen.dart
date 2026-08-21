@@ -14,7 +14,6 @@ import '../../../auth/presentation/screens/login_screen.dart';
 import 'groups_screen.dart';
 import 'home_screen.dart';
 import 'conversation_list_screen.dart';
-import 'notifications_screen.dart';
 import 'notification_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
@@ -237,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 4,
+        selectedIndex: 3,
         onDestinationSelected: (index) {
           if (index == 0) {
             Navigator.of(
@@ -248,10 +247,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MaterialPageRoute(builder: (_) => const ConversationListScreen()),
             );
           } else if (index == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-            );
-          } else if (index == 3) {
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
@@ -278,12 +273,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             label: 'Messages',
-          ),
-          NavigationDestination(
-            icon: UnreadNotificationsBadge(
-              child: Icon(Icons.notifications_none),
-            ),
-            label: 'Notifications',
           ),
           NavigationDestination(
             icon: Icon(Icons.group_outlined),

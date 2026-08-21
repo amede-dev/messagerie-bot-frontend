@@ -9,7 +9,6 @@ import 'chat_screen.dart';
 import 'conversation_list_screen.dart';
 import 'home_screen.dart';
 import 'new_conversation_screen.dart';
-import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 
@@ -170,13 +169,12 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 3,
+        selectedIndex: 2,
         onDestinationSelected: (index) {
           final destination = switch (index) {
             0 => const HomeScreen(),
             1 => const ConversationListScreen(),
-            2 => const NotificationsScreen(),
-            4 => const ProfileScreen(),
+            2 => const ProfileScreen(),
             _ => null,
           };
 
@@ -207,12 +205,6 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               ),
             ),
             label: 'Messages',
-          ),
-          NavigationDestination(
-            icon: UnreadNotificationsBadge(
-              child: Icon(Icons.notifications_none),
-            ),
-            label: 'Notifications',
           ),
           NavigationDestination(icon: Icon(Icons.group), label: 'Groupes'),
           NavigationDestination(
