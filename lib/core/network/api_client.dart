@@ -68,12 +68,6 @@ class ApiClient {
   // ---- Conversations ----
   Future<Response> getConversations() => _dio.get('/api/conversations');
 
-  Future<Response> getGroupesDisponibles() =>
-      _dio.get('/api/conversations/groupes/disponibles');
-
-  Future<Response> rejoindreGroupe(String conversationId) =>
-      _dio.post('/api/conversations/$conversationId/join');
-
   Future<Response> getMessages(String conversationId, {int page = 0}) =>
       _dio.get(
         '/api/conversations/$conversationId/messages',
@@ -82,14 +76,6 @@ class ApiClient {
 
   Future<Response> creerConversation(Map<String, dynamic> payload) =>
       _dio.post('/api/conversations', data: payload);
-
-  Future<Response> ajouterParticipant(String conversationId, String userId) {
-    final idUtilisateur = int.tryParse(userId);
-    return _dio.post(
-      '/api/conversations/$conversationId/participants',
-      data: {'userId': idUtilisateur ?? userId},
-    );
-  }
 
   // ---- Messages ----
   Future<Response> envoyerMessageRest(Map<String, dynamic> payload) =>

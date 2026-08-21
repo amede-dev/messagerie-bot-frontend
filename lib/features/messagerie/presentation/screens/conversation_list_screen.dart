@@ -14,8 +14,6 @@ import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
 import 'chat_screen.dart';
 import 'contact_list_screen.dart';
-import 'groups_screen.dart';
-import 'new_conversation_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
@@ -82,7 +80,6 @@ class _ConversationListScreenState
   /// Le bouton "+" permet uniquement de créer :
   ///
   /// - une nouvelle discussion privée
-  /// - un nouveau groupe
   ///
   /// Uni AI est volontairement absent de ce menu.
   Future<void> _ouvrirMenuNouvelleConversation() async {
@@ -121,18 +118,6 @@ class _ConversationListScreenState
                 },
               ),
 
-              // ---------------------------------------------------------------
-              // NOUVEAU GROUPE
-              // ---------------------------------------------------------------
-              ListTile(
-                leading: const Icon(Icons.group_outlined),
-                title: const Text('Nouveau groupe'),
-                subtitle: const Text('Plusieurs participants à la fois'),
-                onTap: () {
-                  Navigator.of(context).pop('groupe');
-                },
-              ),
-
               const SizedBox(height: 8),
             ],
           ),
@@ -156,15 +141,6 @@ class _ConversationListScreenState
       return;
     }
 
-    // -------------------------------------------------------------------------
-    // NOUVEAU GROUPE
-    // -------------------------------------------------------------------------
-
-    if (choix == 'groupe') {
-      await Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen()));
-    }
   }
 
   // ===========================================================================
@@ -402,7 +378,7 @@ class _ConversationListScreenState
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
-              children: ['Toutes', 'Privées', 'Groupes']
+              children: ['Toutes', 'Privées']
                   .map(
                     (filtre) => Expanded(
                       child: InkWell(
@@ -514,7 +490,6 @@ class _ConversationListScreenState
                       );
                   final correspondFiltre = switch (_filtre) {
                     'Privées' => conversation.type == ConversationType.privee,
-                    'Groupes' => conversation.type == ConversationType.groupe,
                     _ => true,
                   };
                   return correspondRecherche && correspondFiltre;
@@ -636,10 +611,6 @@ class _ConversationListScreenState
           } else if (index == 2) {
             Navigator.of(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
-          } else if (index == 3) {
-            Navigator.of(
-              context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
@@ -664,10 +635,6 @@ class _ConversationListScreenState
               ),
             ),
             label: 'Messages',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            label: 'Groupes',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

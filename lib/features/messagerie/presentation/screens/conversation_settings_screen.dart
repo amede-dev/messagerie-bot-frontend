@@ -5,9 +5,6 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
-import '../widgets/attachment_picker_sheet.dart';
-import 'conversation_members_screen.dart';
-import 'new_conversation_screen.dart';
 import 'shared_media_screen.dart';
 
 class ConversationSettingsScreen extends ConsumerStatefulWidget {
@@ -24,16 +21,6 @@ class _ConversationSettingsScreenState
     extends ConsumerState<ConversationSettingsScreen> {
   bool _enCours = false;
 
-  late String _nomGroupe;
-
-  bool get _estGroupe => widget.conversation.type == ConversationType.groupe;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _nomGroupe = widget.conversation.nom;
-  }
 
   // ============================================================
   // INFORMATION
@@ -95,15 +82,9 @@ class _ConversationSettingsScreenState
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          _estGroupe ? 'Quitter le groupe ?' : 'Supprimer la conversation ?',
-        ),
+        title: const Text('Supprimer la conversation ?'),
 
-        content: Text(
-          _estGroupe
-              ? 'Vous ne recevrez plus les messages de ce groupe.'
-              : 'Cette conversation sera retirée de votre liste.',
-        ),
+        content: const Text('Cette conversation sera retirée de votre liste.'),
 
         actions: [
           TextButton(
@@ -116,7 +97,7 @@ class _ConversationSettingsScreenState
 
             onPressed: () => Navigator.of(context).pop(true),
 
-            child: Text(_estGroupe ? 'Quitter' : 'Supprimer'),
+            child: const Text('Supprimer'),
           ),
         ],
       ),
@@ -158,102 +139,12 @@ class _ConversationSettingsScreenState
   }
 
   // ============================================================
-  // MODIFIER NOM
-  // ============================================================
-
-  Future<void> _modifierNomGroupe() async {
-    var nomSaisi = _nomGroupe;
-
-    final nouveauNom = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Modifier le nom du groupe'),
-
-        content: TextFormField(
-          initialValue: _nomGroupe,
-          autofocus: true,
-          maxLength: 60,
-
-          onChanged: (valeur) {
-            nomSaisi = valeur;
-          },
-
-          decoration: const InputDecoration(labelText: 'Nom du groupe'),
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
-          ),
-
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(nomSaisi.trim()),
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-
-    if (nouveauNom == null || nouveauNom.isEmpty || !mounted) {
-      return;
-    }
-
-    setState(() {
-      _nomGroupe = nouveauNom;
-    });
-
-    ref
-        .read(conversationListProvider.notifier)
-        .renommerConversation(widget.conversation.id, nouveauNom);
-
-    _informer('Le nom du groupe a été modifié.');
-  }
-
-  // ============================================================
-  // MODIFIER PHOTO
-  // ============================================================
-
-  Future<void> _modifierPhotoGroupe() async {
-    try {
-      final selection = await choisirImageDepuisGalerie();
-
-      if (selection == null || !mounted) {
-        return;
-      }
-
-      _informer('La photo du groupe a été sélectionnée.');
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      _informer('Impossible de sélectionner la photo : $e');
-    }
-  }
-
-  // ============================================================
-  // AJOUT PARTICIPANTS
-  // ============================================================
-
-  Future<void> _ouvrirAjoutParticipants() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AddGroupParticipantsScreen(
-          conversationId: widget.conversation.id,
-          conversationNom: _nomGroupe,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
   // BUILD
   // ============================================================
 
   @override
   Widget build(BuildContext context) {
-    final nom = _estGroupe ? _nomGroupe : widget.conversation.nom;
+    final nom = widget.conversation.nom;
 
     return Scaffold(
       appBar: AppBar(),
@@ -285,74 +176,14 @@ class _ConversationSettingsScreenState
 
           const SizedBox(height: 6),
 
-          if (_estGroupe) ..._optionsGroupe(nom) else ..._optionsPrivees(nom),
+          ..._optionsPrivees(nom),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // OPTIONS GROUPE
-  // ============================================================
-
-  List<Widget> _optionsGroupe(String nom) => [
-    const _TitreSection('Actions'),
-
-    _Option(
-      icon: Icons.mark_email_unread_outlined,
-      titre: 'Marquer comme non lu',
-      onTap: () => _informer('La discussion est marquée comme non lue.'),
-    ),
-
-    _Option(
-      icon: Icons.group_outlined,
-      titre: 'Voir les participants',
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ConversationMembersScreen(
-            conversationId: widget.conversation.id,
-            conversationNom: nom,
-          ),
-        ),
-      ),
-    ),
-
-    const _TitreSection('Personnalisation'),
-
-    _Option(
-      icon: Icons.edit_outlined,
-      titre: 'Modifier le nom du groupe',
-      onTap: _modifierNomGroupe,
-    ),
-
-    _Option(
-      icon: Icons.photo_outlined,
-      titre: 'Modifier la photo du groupe',
-      onTap: _modifierPhotoGroupe,
-    ),
-
-    _Option(
-      icon: _enCours ? Icons.hourglass_top : Icons.logout,
-      titre: 'Quitter le groupe',
-      danger: true,
-      onTap: _enCours ? null : _supprimerConversation,
-    ),
-  ];
-
-  // ============================================================
-  // OPTIONS PRIVÉES
-  // ============================================================
-
   List<Widget> _optionsPrivees(String nom) => [
     const _TitreSection('Actions'),
-
-    _Option(
-      icon: Icons.group_add_outlined,
-      titre: 'Créer un groupe avec $nom',
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const NewConversationScreen())),
-    ),
 
     _Option(
       icon: _enCours ? Icons.hourglass_top : Icons.delete_outline,

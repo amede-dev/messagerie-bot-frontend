@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
-import '../../../core/models/group_discovery_model.dart';
 import '../../../core/network/websocket_service.dart';
 import '../../../core/network/auth_repository.dart';
 import '../data/conversation_repository.dart';
@@ -38,17 +37,6 @@ final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
 });
 
 // =============================================================================
-// PARTICIPANTS DES GROUPES
-// =============================================================================
-
-final participantsGroupesProvider =
-    StateProvider<Map<String, List<AppUserModel>>>((ref) => {});
-
-final groupesDisponiblesProvider =
-    FutureProvider<List<GroupDiscoveryModel>>((ref) async {
-  return ref.read(conversationRepositoryProvider).fetchGroupesDisponibles();
-});
-
 // =============================================================================
 // LISTE DES CONVERSATIONS
 // =============================================================================
@@ -233,8 +221,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
 
     final nouvelleListe = actuel.map((conversation) {
       // ---------------------------------------------------------------------
-      // Les groupes ne sont pas concernés
-      // par la présence individuelle.
+      // La présence est suivie uniquement pour les conversations privées.
       // ---------------------------------------------------------------------
 
       if (conversation.type != ConversationType.privee) {
@@ -258,7 +245,6 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
         type: conversation.type,
         nom: conversation.nom,
         avatarInitiales: conversation.avatarInitiales,
-        groupeLieId: conversation.groupeLieId,
         dernierMessage: conversation.dernierMessage,
         nombreNonLus: conversation.nombreNonLus,
         enTrainDecrire: conversation.enTrainDecrire,

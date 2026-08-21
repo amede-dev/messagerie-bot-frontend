@@ -1,6 +1,6 @@
 import 'message_model.dart';
 
-enum ConversationType { privee, groupe, bot }
+enum ConversationType { privee, bot }
 
 // Miroir côté client de l'entité `Conversation` du backend.
 class ConversationModel {
@@ -11,8 +11,6 @@ class ConversationModel {
   final String nom;
 
   final String? avatarInitiales;
-
-  final String? groupeLieId;
 
   final MessageModel? dernierMessage;
 
@@ -55,7 +53,6 @@ class ConversationModel {
     required this.nom,
 
     this.avatarInitiales,
-    this.groupeLieId,
     this.dernierMessage,
 
     this.nombreNonLus = 0,
@@ -102,10 +99,6 @@ class ConversationModel {
       avatarInitiales: json['avatarInitiales'] as String?,
 
       // -----------------------------------------------------------------------
-      // Groupe lié
-      // -----------------------------------------------------------------------
-      groupeLieId: json['groupeLieId']?.toString(),
-
       // -----------------------------------------------------------------------
       // Dernier message
       // -----------------------------------------------------------------------
@@ -171,7 +164,6 @@ class ConversationModel {
 
       avatarInitiales: avatarInitiales,
 
-      groupeLieId: groupeLieId,
 
       dernierMessage: dernierMessage ?? this.dernierMessage,
 

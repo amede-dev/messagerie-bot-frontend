@@ -14,8 +14,7 @@ import 'chat_screen.dart';
 ///
 /// Sélectionner un contact récupère son identifiant (`AppUserModel.id`)
 /// et démarre — ou rouvre si elle existe déjà — la conversation privée
-/// (1 à 1) correspondante, par opposition à une conversation de groupe
-/// qui implique plusieurs identifiants (voir NewConversationScreen).
+/// (1 à 1) correspondante.
 class ContactListScreen extends ConsumerStatefulWidget {
   const ContactListScreen({super.key});
 

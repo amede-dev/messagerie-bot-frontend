@@ -2,7 +2,6 @@ import '../../../core/config/app_config.dart';
 import '../../../core/models/app_user_model.dart';
 import '../../../core/models/conversation_model.dart';
 import '../../../core/models/message_model.dart';
-import '../../../core/models/group_discovery_model.dart';
 import '../../../core/network/api_client.dart';
 
 class ConversationRepository {
@@ -16,22 +15,6 @@ class ConversationRepository {
     return data
         .map((json) => ConversationModel.fromJson(json as Map<String, dynamic>))
         .toList();
-  }
-
-  Future<List<GroupDiscoveryModel>> fetchGroupesDisponibles() async {
-    if (AppConfig.useMockBackend) return const [];
-    final response = await _api.getGroupesDisponibles();
-    return (response.data as List)
-        .map((json) => GroupDiscoveryModel.fromJson(json as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<ConversationModel> rejoindreGroupe(String conversationId) async {
-    if (AppConfig.useMockBackend) {
-      throw UnsupportedError('Adhésion indisponible en mode mock');
-    }
-    final response = await _api.rejoindreGroupe(conversationId);
-    return ConversationModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<List<MessageModel>> fetchMessages(
@@ -51,33 +34,10 @@ class ConversationRepository {
     return messages;
   }
 
-  Future<ConversationModel> creerConversationGroupe({
-    required String nom,
-    required List<String> participantIds,
-    String? groupeLieId,
-  }) async {
-    if (AppConfig.useMockBackend) {
-      return ConversationModel(
-        id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
-        type: ConversationType.groupe,
-        nom: nom,
-        avatarInitiales: nom.isNotEmpty ? nom.substring(0, 1) : '?',
-      );
-    }
-
-    final response = await _api.creerConversation({
-      'type': 'GROUPE',
-      'nom': nom,
-      'participantIds': participantIds,
-      if (groupeLieId != null) 'groupeLieId': groupeLieId,
-    });
-    return ConversationModel.fromJson(response.data as Map<String, dynamic>);
-  }
-
   /// Annuaire des utilisateurs de l'université, issu de la table `app_user`
   /// (peuplée à partir de `Liste_consolidee_ENI_sans_doublons.xlsx`).
   /// Utilisé par l'écran "Nouvelle discussion" (contact_list_screen.dart)
-  /// et par l'écran "Nouveau groupe" (new_conversation_screen.dart).
+  /// depuis l'écran de nouvelle discussion privée.
   Future<List<AppUserModel>> fetchUsers() async {
     if (AppConfig.useMockBackend) {
       return const [AppUserModel(id: '2', nom: 'Rakoto', prenom: 'Hery')];
@@ -166,7 +126,7 @@ class ConversationRepository {
     await _api.bloquerUtilisateur(userId);
   }
 
-  /// Quitter un groupe (ou archiver une conversation privée).
+  /// Retirer une conversation privée.
   /// En mode mock : aucun appel réseau, le retrait visuel est géré côté
   /// provider (retirerConversation). Sinon : DELETE /api/conversations/{id}.
   Future<void> quitterConversation(String conversationId) async {
@@ -181,23 +141,6 @@ class ConversationRepository {
     return [
       ConversationModel(
         id: 'conv-1',
-        type: ConversationType.groupe,
-        nom: 'Groupe L2 Info',
-        avatarInitiales: 'L2I',
-        nombreNonLus: 5,
-        dernierMessage: MessageModel(
-          id: 'm1',
-          conversationId: 'conv-1',
-          expediteurId: 'u2',
-          expediteurNom: 'Rina',
-          contenu: 'Le TP est reporté à demain',
-          type: MessageType.texte,
-          statut: MessageStatut.recu,
-          dateEnvoi: maintenant.subtract(const Duration(minutes: 20)),
-        ),
-      ),
-      ConversationModel(
-        id: 'conv-2',
         type: ConversationType.privee,
         nom: 'Hery Rakoto',
         avatarInitiales: 'HR',
@@ -211,22 +154,6 @@ class ConversationRepository {
           type: MessageType.texte,
           statut: MessageStatut.lu,
           dateEnvoi: maintenant.subtract(const Duration(hours: 20)),
-        ),
-      ),
-      ConversationModel(
-        id: 'conv-3',
-        type: ConversationType.groupe,
-        nom: 'Club Informatique',
-        avatarInitiales: 'CI',
-        dernierMessage: MessageModel(
-          id: 'm3',
-          conversationId: 'conv-3',
-          expediteurId: 'u3',
-          expediteurNom: 'Mamy',
-          contenu: 'Réunion vendredi 14h, salle B2',
-          type: MessageType.texte,
-          statut: MessageStatut.recu,
-          dateEnvoi: maintenant.subtract(const Duration(days: 3)),
         ),
       ),
     ];

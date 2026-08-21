@@ -633,8 +633,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       chatMessagesProvider(widget.conversation.id),
     );
 
-    final estGroupe = widget.conversation.type == ConversationType.groupe;
-
     return Scaffold(
       // ==========================================================
       // APP BAR
@@ -810,7 +808,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       return MessageBubble(
                         message: message,
                         estUtilisateurCourant: estUtilisateurCourant,
-                        afficherNomExpediteur: estGroupe,
+                        afficherNomExpediteur: false,
                         onLongPress: () {
                           _ouvrirActionsMessage(message, estUtilisateurCourant);
                         },

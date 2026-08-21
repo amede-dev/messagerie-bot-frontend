@@ -11,7 +11,6 @@ import '../../../../core/network/file_upload_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
-import 'groups_screen.dart';
 import 'home_screen.dart';
 import 'conversation_list_screen.dart';
 import 'notification_settings_screen.dart';
@@ -236,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: 3,
+        selectedIndex: 2,
         onDestinationSelected: (index) {
           if (index == 0) {
             Navigator.of(
@@ -246,11 +245,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ConversationListScreen()),
             );
-          } else if (index == 2) {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const GroupsScreen()));
-          }
         },
         destinations: [
           NavigationDestination(
@@ -273,10 +267,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             label: 'Messages',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            label: 'Groupes',
           ),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profil'),
         ],

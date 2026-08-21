@@ -11,8 +11,6 @@ import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
 import 'conversation_list_screen.dart';
 import 'contact_list_screen.dart';
-import 'groups_screen.dart';
-import 'new_conversation_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -114,10 +112,6 @@ class HomeScreen extends ConsumerWidget {
             label: 'Messages',
           ),
           NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            label: 'Groupes',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.person_outline),
             label: 'Profil',
           ),
@@ -129,8 +123,7 @@ class HomeScreen extends ConsumerWidget {
   static void _ouvrirNavigation(BuildContext context, int index) {
     final destination = switch (index) {
       1 => const ConversationListScreen(),
-      2 => const GroupsScreen(),
-      3 => const ProfileScreen(),
+      2 => const ProfileScreen(),
       _ => null,
     };
 
@@ -144,51 +137,9 @@ class HomeScreen extends ConsumerWidget {
   static Future<void> _ouvrirMenuNouvelleConversation(
     BuildContext context,
   ) async {
-    final choix = await showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusL),
-        ),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'Nouveau',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Nouvelle discussion'),
-              subtitle: const Text('Choisir un contact dans l\'annuaire'),
-              onTap: () => Navigator.of(context).pop('privee'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.group_outlined),
-              title: const Text('Nouveau groupe'),
-              subtitle: const Text('Plusieurs participants à la fois'),
-              onTap: () => Navigator.of(context).pop('groupe'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ContactListScreen()),
     );
-
-    if (!context.mounted || choix == null) return;
-
-    final destination = choix == 'privee'
-        ? const ContactListScreen()
-        : const NewConversationScreen();
-
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => destination));
   }
 
   static void _ouvrirEcran(BuildContext context, String value) {
@@ -197,9 +148,7 @@ class HomeScreen extends ConsumerWidget {
       'accueil' => const HomeScreen(),
       'messagerie' => const ConversationListScreen(),
       'chat' => const ConversationListScreen(),
-      'nouvelle' => const NewConversationScreen(),
       'privees' => const ConversationListScreen(initialFilter: 'Privées'),
-      'groupes' => const GroupsScreen(),
       'profil' => const ProfileScreen(),
       'assistant' => const BotChatScreen(),
       _ => null,

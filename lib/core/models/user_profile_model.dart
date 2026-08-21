@@ -6,7 +6,6 @@ class UserProfileModel {
   final String? niveau;
   final String? photoUrl;
   final int amis;
-  final int groupes;
 
   const UserProfileModel({
     required this.nom,
@@ -16,7 +15,6 @@ class UserProfileModel {
     this.niveau,
     this.photoUrl,
     required this.amis,
-    required this.groupes,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -28,7 +26,6 @@ class UserProfileModel {
       niveau: json['niveau'] as String?,
       photoUrl: json['photoUrl'] as String?,
       amis: (json['amis'] as num? ?? 0).toInt(),
-      groupes: (json['groupes'] as num? ?? 0).toInt(),
     );
   }
 
