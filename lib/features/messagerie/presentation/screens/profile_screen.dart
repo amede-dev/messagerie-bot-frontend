@@ -245,6 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ConversationListScreen()),
             );
+          }
         },
         destinations: [
           NavigationDestination(

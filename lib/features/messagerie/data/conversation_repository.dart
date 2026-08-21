@@ -103,14 +103,6 @@ class ConversationRepository {
     return MessageModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> ajouterParticipant(
-    String conversationId,
-    String utilisateurId,
-  ) async {
-    if (AppConfig.useMockBackend) return;
-    await _api.ajouterParticipant(conversationId, utilisateurId);
-  }
-
   Future<void> signalerMessage(String messageId, String motif) async {
     if (AppConfig.useMockBackend) return;
     await _api.signalerMessage(messageId, motif);
