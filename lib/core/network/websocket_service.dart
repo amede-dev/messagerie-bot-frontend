@@ -6,6 +6,7 @@ import 'package:stomp_dart_client/stomp_dart_client.dart';
 
 import '../config/app_config.dart';
 import '../models/message_model.dart';
+import '../utils/api_date_time.dart';
 
 class PresenceModel {
   final String utilisateurId;
@@ -25,8 +26,20 @@ class PresenceModel {
       enLigne: json['enLigne'] == true,
 
       derniereConnexion: json['derniereConnexion'] != null
-          ? DateTime.tryParse(json['derniereConnexion'].toString())
+          ? ApiDateTime.parse(json['derniereConnexion'].toString())
           : null,
+    );
+  }
+}
+
+class MessageSuppressionModel {
+  final String messageId;
+
+  const MessageSuppressionModel({required this.messageId});
+
+  factory MessageSuppressionModel.fromJson(Map<String, dynamic> json) {
+    return MessageSuppressionModel(
+      messageId: json['messageId'].toString(),
     );
   }
 }
@@ -51,6 +64,12 @@ class WebSocketService {
   final _messageController = StreamController<MessageModel>.broadcast();
 
   Stream<MessageModel> get messageStream => _messageController.stream;
+
+  final _messageSuppressionController =
+      StreamController<MessageSuppressionModel>.broadcast();
+
+  Stream<MessageSuppressionModel> get messageSuppressionStream =>
+      _messageSuppressionController.stream;
 
   // ==========================================================================
   // STREAM "EN TRAIN D'ÉCRIRE"
@@ -277,6 +296,22 @@ class WebSocketService {
           _typingController.add(data);
         } catch (e) {
           print('Erreur notification de frappe: $e');
+        }
+      },
+    );
+
+    _client?.subscribe(
+      destination: '/topic/conversation.$conversationId.deleted',
+      callback: (frame) {
+        if (frame.body == null) return;
+
+        try {
+          final data = jsonDecode(frame.body!) as Map<String, dynamic>;
+          _messageSuppressionController.add(
+            MessageSuppressionModel.fromJson(data),
+          );
+        } catch (e) {
+          print('Erreur suppression message: $e');
         }
       },
     );

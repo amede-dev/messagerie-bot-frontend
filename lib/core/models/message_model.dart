@@ -1,3 +1,5 @@
+import '../utils/api_date_time.dart';
+
 enum MessageType { texte, image, document, audio, video, systeme }
 
 enum MessageStatut { enAttente, envoye, recu, lu }
@@ -62,26 +64,11 @@ class MessageModel {
         orElse: () => MessageStatut.envoye,
       ),
 
-      dateEnvoi: _dateLocaleDepuisApi(json['dateEnvoi']?.toString()),
+      dateEnvoi:
+          ApiDateTime.parse(json['dateEnvoi']?.toString()) ?? DateTime.now(),
 
       messageParentId: json['messageParentId']?.toString(),
     );
-  }
-
-  // ============================================================
-  // DATE API -> DATE LOCALE
-  // ============================================================
-
-  static DateTime _dateLocaleDepuisApi(String? valeur) {
-    if (valeur == null || valeur.isEmpty) {
-      return DateTime.now();
-    }
-
-    final contientFuseau = RegExp(r'(Z|[+-]\d{2}:?\d{2})$').hasMatch(valeur);
-
-    final date = DateTime.parse(contientFuseau ? valeur : '${valeur}Z');
-
-    return date.toLocal();
   }
 
   // ============================================================

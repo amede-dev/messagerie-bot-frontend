@@ -474,34 +474,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _modifierMessage(MessageModel message) async {
-    final controller = TextEditingController(text: message.contenu);
     final contenu = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Modifier le message'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 5,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(hintText: 'Votre message'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final texte = controller.text.trim();
-              if (texte.isNotEmpty) Navigator.of(context).pop(texte);
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
+      builder: (_) => _EditMessageDialog(initialText: message.contenu),
     );
-    controller.dispose();
 
     if (!mounted || contenu == null || contenu == message.contenu) return;
 
@@ -586,10 +562,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'La suppression pour tous nécessite '
-            'la mise à jour du serveur.',
-          ),
+          content: Text('Impossible de supprimer le message pour tout le monde.'),
         ),
       );
     }
@@ -839,6 +812,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _EditMessageDialog extends StatefulWidget {
+  const _EditMessageDialog({required this.initialText});
+
+  final String initialText;
+
+  @override
+  State<_EditMessageDialog> createState() => _EditMessageDialogState();
+}
+
+class _EditMessageDialogState extends State<_EditMessageDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Modifier le message'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLines: 5,
+        textInputAction: TextInputAction.done,
+        decoration: const InputDecoration(hintText: 'Votre message'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final texte = _controller.text.trim();
+            if (texte.isNotEmpty) Navigator.of(context).pop(texte);
+          },
+          child: const Text('Enregistrer'),
+        ),
+      ],
     );
   }
 }

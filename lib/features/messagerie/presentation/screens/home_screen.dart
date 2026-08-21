@@ -6,11 +6,9 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../../../shared/widgets/unread_badges.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
 import 'conversation_list_screen.dart';
-import 'contact_list_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -29,7 +27,11 @@ class HomeScreen extends ConsumerWidget {
                 'Réseau Social Universitaire ENI',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDark,
+                ),
               ),
             ),
             SizedBox(width: 8),
@@ -43,17 +45,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Accès rapide — tous les écrans',
-            icon: const Icon(Icons.apps),
-            onSelected: (value) => _ouvrirEcran(context, value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'connexion', child: Text('Connexion')),
-              PopupMenuItem(value: 'privees', child: Text('Messages privés')),
-            ],
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -61,17 +52,14 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const _WelcomeHeader(),
+              const SizedBox(height: 14),
               _AssistantPromo(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const BotChatScreen()),
                 ),
               ),
-              const SizedBox(height: 24),
-              _QuickAccess(
-                onConversationTap: () =>
-                    _ouvrirMenuNouvelleConversation(context),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
               _RecentMessages(
                 onViewAll: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -133,32 +121,35 @@ class HomeScreen extends ConsumerWidget {
       ).push(MaterialPageRoute(builder: (_) => destination));
     }
   }
+}
 
-  static Future<void> _ouvrirMenuNouvelleConversation(
-    BuildContext context,
-  ) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ContactListScreen()),
+class _WelcomeHeader extends StatelessWidget {
+  const _WelcomeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bonjour, Étudiant',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          'Prêt pour une nouvelle journée\nd’apprentissage ?',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            height: 1.25,
+          ),
+        ),
+      ],
     );
-  }
-
-  static void _ouvrirEcran(BuildContext context, String value) {
-    final destination = switch (value) {
-      'connexion' => const LoginScreen(),
-      'accueil' => const HomeScreen(),
-      'messagerie' => const ConversationListScreen(),
-      'chat' => const ConversationListScreen(),
-      'privees' => const ConversationListScreen(initialFilter: 'Privées'),
-      'profil' => const ProfileScreen(),
-      'assistant' => const BotChatScreen(),
-      _ => null,
-    };
-
-    if (destination != null) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => destination));
-    }
   }
 }
 
@@ -170,18 +161,11 @@ class _AssistantPromo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: const Color(0xFFF2FBF5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E2E2)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFDCEFE2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,39 +173,59 @@ class _AssistantPromo extends StatelessWidget {
           Row(
             children: [
               const CircleAvatar(
-                radius: 26,
+                radius: 16,
                 backgroundColor: AppColors.primary,
-                child: Icon(Icons.smart_toy, color: Colors.white),
+                child: Icon(Icons.smart_toy, color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 8),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Besoin d’aide pour vos cours ?',
+                      'Assistant AI',
                       style: TextStyle(
                         color: AppColors.textPrimary,
-                        fontSize: 17,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Demandez à UniBot, votre assistant académique 24/7.',
-                      style: TextStyle(color: AppColors.textPrimary),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onTap,
-              child: const Text('Démarrer'),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E2E2)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Comment puis-je vous aider aujourd’hui ?',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 10,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Image.asset(
+                    'assets/images/icon2.png',
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -359,10 +363,20 @@ class _RecentMessages extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Messages Récents',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              'Derniers messages privés',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
-            TextButton(onPressed: onViewAll, child: const Text('Voir tout')),
+            TextButton(
+              onPressed: onViewAll,
+              child: const Text(
+                'TOUT VOIR',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ],
         ),
         conversationsAsync.when(
@@ -372,7 +386,13 @@ class _RecentMessages extends ConsumerWidget {
           ),
           error: (error, _) => Text('Erreur : $error'),
           data: (conversations) {
-            final recents = conversations.take(3).toList();
+            final recents = conversations
+                .where(
+                  (conversation) =>
+                      conversation.type == ConversationType.privee,
+                )
+                .take(4)
+                .toList();
 
             if (recents.isEmpty) {
               return const Text('Aucun message récent.');
@@ -429,6 +449,15 @@ class _RecentMessageCard extends StatelessWidget {
     return DateFormat('dd/MM/yyyy HH:mm').format(date);
   }
 
+  String? _statutDateAffichee() {
+    if (conversation.estEnLigne) return null;
+
+    final derniereConnexion = conversation.derniereConnexion;
+    if (derniereConnexion == null) return null;
+
+    return 'Vu ${_dateAffichee(derniereConnexion)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final initiales =
@@ -476,14 +505,16 @@ class _RecentMessageCard extends StatelessWidget {
                 : FontWeight.w400,
           ),
         ),
-        trailing: conversation.dernierMessage == null
+        trailing:
+            conversation.dernierMessage == null && _statutDateAffichee() == null
             ? null
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _dateAffichee(conversation.dernierMessage!.dateEnvoi),
+                    _statutDateAffichee() ??
+                        _dateAffichee(conversation.dernierMessage!.dateEnvoi),
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 10,

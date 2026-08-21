@@ -1,4 +1,5 @@
 import 'message_model.dart';
+import '../utils/api_date_time.dart';
 
 enum ConversationType { privee, bot }
 
@@ -129,7 +130,7 @@ class ConversationModel {
       // DERNIÈRE CONNEXION
       // -----------------------------------------------------------------------
       derniereConnexion: json['derniereConnexion'] != null
-          ? DateTime.tryParse(json['derniereConnexion'].toString())
+          ? ApiDateTime.parse(json['derniereConnexion'].toString())
           : null,
     );
   }
@@ -163,7 +164,6 @@ class ConversationModel {
       nom: nom ?? this.nom,
 
       avatarInitiales: avatarInitiales,
-
 
       dernierMessage: dernierMessage ?? this.dernierMessage,
 

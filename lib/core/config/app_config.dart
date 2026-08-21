@@ -16,6 +16,12 @@ class AppConfig {
     final uri = Uri.tryParse(value.trim());
     if (uri == null) return null;
 
+    // Compatibilité avec les anciens messages enregistrés avec /uploads/.
+    if (uri.path.startsWith('/uploads/')) {
+      final nom = uri.path.substring('/uploads/'.length);
+      return '$apiBaseUrl/api/files/download/$nom';
+    }
+
     if (!uri.hasScheme || uri.host == 'localhost' || uri.host == '127.0.0.1') {
       return '$apiBaseUrl${uri.path}';
     }

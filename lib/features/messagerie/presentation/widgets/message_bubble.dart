@@ -10,6 +10,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../../core/models/message_model.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 
@@ -171,7 +172,7 @@ class MessageBubble extends StatelessWidget {
         );
 
       case MessageType.image:
-        return _image();
+        return _image(context);
 
       case MessageType.video:
         return _video();
@@ -180,7 +181,7 @@ class MessageBubble extends StatelessWidget {
         return _audio();
 
       case MessageType.document:
-        return _document(couleurTexte);
+        return _document(context, couleurTexte);
 
       case MessageType.systeme:
         return Text(
@@ -194,7 +195,7 @@ class MessageBubble extends StatelessWidget {
   // IMAGE
   // ==========================================================================
 
-  Widget _image() {
+  Widget _image(BuildContext context) {
     final url = AppConfig.resolveMediaUrl(message.contenu)!;
     return Stack(
       alignment: Alignment.bottomRight,
@@ -244,12 +245,12 @@ class MessageBubble extends StatelessWidget {
             },
           ),
         ),
-        _downloadButton(url, 'image'),
+        _downloadButton(context, url, 'image'),
       ],
     );
   }
 
-  Widget _downloadButton(String url, String type) {
+  Widget _downloadButton(BuildContext context, String url, String type) {
     return Padding(
       padding: const EdgeInsets.all(6),
       child: Material(
@@ -258,29 +259,41 @@ class MessageBubble extends StatelessWidget {
         child: IconButton(
           tooltip: 'Télécharger',
           icon: const Icon(Icons.download, color: Colors.white, size: 20),
-          onPressed: () => _telecharger(url, type),
+          onPressed: () => _telecharger(context, url, type),
         ),
       ),
     );
   }
 
-  Future<void> _telecharger(String url, String type) async {
+  Future<void> _telecharger(
+    BuildContext context,
+    String url,
+    String type,
+  ) async {
     try {
-      final response = await Dio().get<List<int>>(
+      final response = await ApiClient.instance.dio.get<List<int>>(
         url,
         options: Options(responseType: ResponseType.bytes),
       );
       final nom = Uri.parse(url).pathSegments.last.isEmpty
           ? 'fichier_$type'
           : Uri.parse(url).pathSegments.last;
-      await FilePicker.platform.saveFile(
+      final chemin = await FilePicker.platform.saveFile(
         dialogTitle: 'Enregistrer le fichier',
         fileName: nom,
         bytes: Uint8List.fromList(response.data ?? const <int>[]),
       );
-    } catch (_) {
-      // Le bouton est dans un StatelessWidget ; l'erreur réseau est déjà
-      // visible via le chargement/les contrôles du système de fichiers.
+      if (chemin != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fichier téléchargé.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Téléchargement impossible : $error')),
+        );
+      }
     }
   }
 
@@ -304,7 +317,7 @@ class MessageBubble extends StatelessWidget {
   // DOCUMENT
   // ==========================================================================
 
-  Widget _document(Color couleurTexte) {
+  Widget _document(BuildContext context, Color couleurTexte) {
     final nom = message.contenu.split('/').last;
     final url = AppConfig.resolveMediaUrl(message.contenu)!;
 
@@ -335,7 +348,7 @@ class MessageBubble extends StatelessWidget {
           IconButton(
             tooltip: 'Télécharger',
             icon: const Icon(Icons.download_outlined),
-            onPressed: () => _telecharger(url, 'document'),
+            onPressed: () => _telecharger(context, url, 'document'),
           ),
         ],
       ),
@@ -424,12 +437,30 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
       return;
     }
 
-    await _player.play(
-      UrlSource(AppConfig.resolveMediaUrl(widget.url) ?? widget.url),
-    );
+    try {
+      final url = AppConfig.resolveMediaUrl(widget.url) ?? widget.url;
+      final response = await ApiClient.instance.dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final octets = response.data;
+      if (octets == null || octets.isEmpty) {
+        throw StateError('Le fichier vocal est vide.');
+      }
 
-    if (mounted) {
-      setState(() => _lecture = true);
+      final extension = Uri.parse(url).path.split('.').last.toLowerCase();
+      final mimeType = extension == 'mp3' ? 'audio/mpeg' : 'audio/mp4';
+
+      await _player.play(
+        BytesSource(Uint8List.fromList(octets), mimeType: mimeType),
+      );
+
+      if (mounted) setState(() => _lecture = true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de lire le vocal : $error')),
+      );
     }
   }
 

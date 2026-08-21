@@ -23,9 +23,7 @@ import 'profile_screen.dart';
 /// Il est accessible uniquement par son bouton flottant,
 /// placé juste au-dessus du bouton "+".
 class ConversationListScreen extends ConsumerStatefulWidget {
-  const ConversationListScreen({super.key, this.initialFilter = 'Toutes'});
-
-  final String initialFilter;
+  const ConversationListScreen({super.key});
 
   @override
   ConsumerState<ConversationListScreen> createState() =>
@@ -47,7 +45,9 @@ class _ConversationListScreenState
   @override
   void initState() {
     super.initState();
-    _filtre = widget.initialFilter;
+    // L'écran affiche désormais toutes les conversations ; le filtre
+    // « Privées » n'est plus présenté dans l'interface.
+    _filtre = 'Toutes';
   }
 
   @override
@@ -377,37 +377,29 @@ class _ConversationListScreenState
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: ['Toutes', 'Privées']
-                  .map(
-                    (filtre) => Expanded(
-                      child: InkWell(
-                        onTap: () => setState(() => _filtre = filtre),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 9),
-                          decoration: BoxDecoration(
-                            color: _filtre == filtre
-                                ? AppColors.primary
-                                : Colors.black,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            filtre,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: _filtre == filtre
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: () => setState(() => _filtre = 'Toutes'),
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  width: 112,
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Toutes',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
-                  )
-                  .toList(),
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -488,10 +480,7 @@ class _ConversationListScreenState
                       conversation.nom.toLowerCase().contains(
                         _recherche.toLowerCase(),
                       );
-                  final correspondFiltre = switch (_filtre) {
-                    'Privées' => conversation.type == ConversationType.privee,
-                    _ => true,
-                  };
+                  final correspondFiltre = _filtre == 'Toutes';
                   return correspondRecherche && correspondFiltre;
                 }).toList();
 

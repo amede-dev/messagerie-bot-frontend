@@ -34,15 +34,12 @@ class FileUploadService {
   Future<UploadedFile> _envoyer(File fichier, String endpoint) async {
     final nom = fichier.path.split(Platform.pathSeparator).last;
     final extension = nom.split('.').last.toLowerCase();
-    const extensionsAudio = {'m4a', 'mp3', 'wav', 'aac', 'ogg'};
 
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(
         fichier.path,
         filename: nom,
-        contentType: extensionsAudio.contains(extension)
-            ? DioMediaType('audio', extension == 'm4a' ? 'mp4' : extension)
-            : null,
+        contentType: _typeMime(extension),
       ),
     });
 
@@ -55,5 +52,37 @@ class FileUploadService {
       nom: data['nom'].toString(),
       type: data['type'].toString(),
     );
+  }
+
+  DioMediaType? _typeMime(String extension) {
+    const types = {
+      'pdf': ['application', 'pdf'],
+      'doc': ['application', 'msword'],
+      'docx': [
+        'application',
+        'vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ],
+      'xls': ['application', 'vnd.ms-excel'],
+      'xlsx': [
+        'application',
+        'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ],
+      'jpg': ['image', 'jpeg'],
+      'jpeg': ['image', 'jpeg'],
+      'png': ['image', 'png'],
+      'webp': ['image', 'webp'],
+      'gif': ['image', 'gif'],
+      'm4a': ['audio', 'mp4'],
+      'mp3': ['audio', 'mpeg'],
+      'wav': ['audio', 'wav'],
+      'aac': ['audio', 'aac'],
+      'ogg': ['audio', 'ogg'],
+      'mp4': ['video', 'mp4'],
+      'mov': ['video', 'quicktime'],
+      'webm': ['video', 'webm'],
+    };
+
+    final type = types[extension];
+    return type == null ? null : DioMediaType(type[0], type[1]);
   }
 }

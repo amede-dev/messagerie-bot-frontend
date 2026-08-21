@@ -322,6 +322,20 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
 
     state = AsyncData(_trierConversations(nouvelleListe));
   }
+
+  /// Met à jour immédiatement le dernier message dans l'accueil et la liste
+  /// après une modification confirmée par le backend.
+  void mettreAJourMessage(MessageModel message) {
+    final actuel = state.valueOrNull;
+    if (actuel == null) return;
+
+    final nouvelleListe = actuel.map((conversation) {
+      if (conversation.id != message.conversationId) return conversation;
+      return conversation.copyWith(dernierMessage: message);
+    }).toList();
+
+    state = AsyncData(_trierConversations(nouvelleListe));
+  }
 }
 
 // =============================================================================
@@ -338,6 +352,7 @@ final chatMessagesProvider =
 class ChatMessagesNotifier
     extends FamilyAsyncNotifier<List<MessageModel>, String> {
   StreamSubscription<MessageModel>? _messageSubscription;
+  StreamSubscription<MessageSuppressionModel>? _suppressionSubscription;
   int _page = 0;
   bool _chargementPagePrecedente = false;
   bool _aEncoreDesMessages = true;
@@ -357,10 +372,16 @@ class ChatMessagesNotifier
         _ajouterMessage(message);
       }
     });
+    _suppressionSubscription =
+        WebSocketService.instance.messageSuppressionStream.listen((suppression) {
+          supprimerMessageLocalement(suppression.messageId);
+        });
 
     ref.onDispose(() {
       _messageSubscription?.cancel();
+      _suppressionSubscription?.cancel();
       _messageSubscription = null;
+      _suppressionSubscription = null;
     });
 
     final repo = ref.read(conversationRepositoryProvider);
@@ -449,6 +470,7 @@ class ChatMessagesNotifier
         .read(conversationRepositoryProvider)
         .modifierMessage(messageId, contenu);
     _ajouterMessage(message);
+    ref.read(conversationListProvider.notifier).mettreAJourMessage(message);
   }
 
   // ===========================================================================
