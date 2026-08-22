@@ -339,9 +339,22 @@ class _ConversationListScreenState
         automaticallyImplyLeading: false,
         titleSpacing: 16,
 
-        title: const Text(
-          'Messagerie',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        title: const Row(
+          children: [
+            ClipOval(
+              child: Image(
+                image: AssetImage('assets/images/logo_eni.jpeg'),
+                width: 30,
+                height: 30,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Messagerie',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            ),
+          ],
         ),
       ),
 

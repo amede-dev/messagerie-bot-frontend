@@ -449,15 +449,6 @@ class _RecentMessageCard extends StatelessWidget {
     return DateFormat('dd/MM/yyyy HH:mm').format(date);
   }
 
-  String? _statutDateAffichee() {
-    if (conversation.estEnLigne) return null;
-
-    final derniereConnexion = conversation.derniereConnexion;
-    if (derniereConnexion == null) return null;
-
-    return 'Vu ${_dateAffichee(derniereConnexion)}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final initiales =
@@ -505,16 +496,14 @@ class _RecentMessageCard extends StatelessWidget {
                 : FontWeight.w400,
           ),
         ),
-        trailing:
-            conversation.dernierMessage == null && _statutDateAffichee() == null
+        trailing: conversation.dernierMessage == null
             ? null
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _statutDateAffichee() ??
-                        _dateAffichee(conversation.dernierMessage!.dateEnvoi),
+                    _dateAffichee(conversation.dernierMessage!.dateEnvoi),
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 10,
