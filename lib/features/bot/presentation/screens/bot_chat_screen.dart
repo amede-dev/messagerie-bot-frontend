@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
+import '../../../../core/models/message_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/uni_logo.dart';
 import '../../../messagerie/presentation/widgets/chat_input_bar.dart';
@@ -58,6 +60,10 @@ class BotChatScreen extends ConsumerWidget {
                             message: entry.message,
                             estUtilisateurCourant:
                                 entry.message.expediteurId == 'me',
+                            onLongPress: () => _ouvrirActionsMessage(
+                              context,
+                              entry.message,
+                            ),
                           ),
                           if (estDernier && entry.suggestions.isNotEmpty)
                             Padding(
@@ -110,6 +116,32 @@ class BotChatScreen extends ConsumerWidget {
           ChatInputBar(onSend: notifier.envoyer, afficherActionsMedia: false),
         ],
       ),
+    );
+  }
+
+  Future<void> _ouvrirActionsMessage(
+    BuildContext context,
+    MessageModel message,
+  ) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.copy_outlined),
+          title: const Text('Copier'),
+          onTap: () => Navigator.of(context).pop('copier'),
+        ),
+      ),
+    );
+
+    if (action != 'copier' || !context.mounted) return;
+
+    await Clipboard.setData(ClipboardData(text: message.contenu));
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message copié')),
     );
   }
 }
