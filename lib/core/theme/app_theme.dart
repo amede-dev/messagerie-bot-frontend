@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Couleurs issues de Design.html : vert d'action, surfaces blanches et
-  // texte presque noir. Les gris servent uniquement aux surfaces de repos.
+  // Couleurs issues de Design.html 
   static const primary = Color(0xFF00C853);
   static const primaryDark = Color(0xFF006E2A);
   static const primaryLight = Color(0xFFE8F8ED);
