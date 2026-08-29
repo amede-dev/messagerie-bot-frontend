@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Icône ronde de l'assistant "Uni" dans la palette ENI.
+// Icône ronde de l'assistant "Uni" dans la palette ENI.
 class UniLogo extends StatelessWidget {
   final double size;
 
