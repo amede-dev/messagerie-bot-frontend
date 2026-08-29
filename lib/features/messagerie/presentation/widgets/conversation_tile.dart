@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/utils/message_date_formatter.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 
 // Ligne de la liste des conversations : avatar, nom, dernier message,
@@ -93,7 +93,7 @@ class ConversationTile extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
-                              DateFormat.Hm().format(
+                              MessageDateFormatter.format(
                                 conversation.dernierMessage!.dateEnvoi,
                               ),
                               style: TextStyle(

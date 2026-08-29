@@ -41,6 +41,8 @@ class _Badge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Badge(
       isLabelVisible: count > 0,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
       label: Text(count > 99 ? '99+' : '$count'),
       child: child,
     );

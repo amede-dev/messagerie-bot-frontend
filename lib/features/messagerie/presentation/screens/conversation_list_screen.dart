@@ -32,10 +32,8 @@ class ConversationListScreen extends ConsumerStatefulWidget {
 
 class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
-  final _rechercheController = TextEditingController();
   final _authRepository = AuthRepository();
 
-  String _recherche = '';
   String _filtre = 'Toutes';
 
   // ===========================================================================
@@ -48,17 +46,54 @@ class _ConversationListScreenState
     // L'écran affiche désormais toutes les conversations ; le filtre
     // « Privées » n'est plus présenté dans l'interface.
     _filtre = 'Toutes';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(conversationListProvider.notifier).rafraichir();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _rechercheController.dispose();
     super.dispose();
   }
 
   // ===========================================================================
   // RECHERCHE
   // ===========================================================================
+
+  /// La recherche n'occupe plus une ligne permanente dans l'écran.
+  /// La loupe ouvre l'annuaire avec les photos et le filtrage instantané.
+  Future<void> _ouvrirRecherche() async {
+    late final List<AppUserModel> contacts;
+    try {
+      contacts = await ref.read(contactsUniversitairesProvider.future);
+    } catch (erreur) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de charger les contacts : $erreur')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final contact = await showDialog<AppUserModel>(
+      context: context,
+      builder: (dialogContext) {
+        return _RechercheContactsDialog(
+          contacts: contacts,
+          onContactSelected: (selected) {
+            Navigator.of(dialogContext).pop(selected);
+          },
+        );
+      },
+    );
+
+    if (contact != null && mounted) {
+      await _demarrerConversationAvec(contact);
+    }
+  }
 
   // ===========================================================================
   // UNI AI
@@ -74,73 +109,14 @@ class _ConversationListScreenState
   }
 
   // ===========================================================================
-  // MENU DU BOUTON +
+  // NOUVELLE CONVERSATION
   // ===========================================================================
 
-  /// Le bouton "+" permet uniquement de créer :
-  ///
-  /// - une nouvelle discussion privée
-  ///
-  /// Uni AI est volontairement absent de ce menu.
-  Future<void> _ouvrirMenuNouvelleConversation() async {
-    final choix = await showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusL),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ---------------------------------------------------------------
-              // TITRE
-              // ---------------------------------------------------------------
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Nouveau',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-                ),
-              ),
-
-              // ---------------------------------------------------------------
-              // NOUVELLE DISCUSSION PRIVÉE
-              // ---------------------------------------------------------------
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Nouvelle discussion'),
-                subtitle: const Text('Choisir un contact dans l\'annuaire'),
-                onTap: () {
-                  Navigator.of(context).pop('privee');
-                },
-              ),
-
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (choix == null || !mounted) {
-      return;
-    }
-
-    // -------------------------------------------------------------------------
-    // NOUVELLE DISCUSSION PRIVÉE
-    // -------------------------------------------------------------------------
-
-    if (choix == 'privee') {
-      await Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
-
-      return;
-    }
-
+  /// Le bouton "+" ouvre directement l'annuaire des contacts.
+  Future<void> _ouvrirNouvelleConversation() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
   }
 
   // ===========================================================================
@@ -330,6 +306,8 @@ class _ConversationListScreenState
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationListProvider);
+    final messagesNonLus = ref.watch(unreadMessagesCountProvider);
+    final contactsAsync = ref.watch(contactsUniversitairesProvider);
 
     return Scaffold(
       // ========================================================================
@@ -356,6 +334,14 @@ class _ConversationListScreenState
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Rechercher',
+            onPressed: _ouvrirRecherche,
+            icon: const Icon(Icons.search_rounded),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
 
       // ========================================================================
@@ -363,56 +349,21 @@ class _ConversationListScreenState
       // ========================================================================
       body: Column(
         children: [
-          // ---------------------------------------------------------------------
-          // BARRE DE RECHERCHE
-          // ---------------------------------------------------------------------
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: TextField(
-              controller: _rechercheController,
-              onChanged: (val) => setState(() => _recherche = val),
-              style: const TextStyle(color: Colors.black, fontSize: 14),
-              cursorColor: AppColors.primary,
-              decoration: InputDecoration(
-                hintText: 'Rechercher...',
-                hintStyle: const TextStyle(color: Colors.black54, fontSize: 14),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: AppColors.surfaceLight,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                  borderSide: const BorderSide(color: AppColors.primary),
-                ),
-              ),
-            ),
+          // Contacts horizontaux, comme dans Messenger : ils apparaissent
+          // immédiatement sous le titre, avant les filtres.
+          _ContactsRapides(
+            contactsAsync: contactsAsync,
+            onContactTap: _demarrerConversationAvec,
           ),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: InkWell(
-                onTap: () => setState(() => _filtre = 'Toutes'),
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  width: 112,
-                  padding: const EdgeInsets.symmetric(vertical: 9),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Toutes',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
+            child: Row(
+              children: [
+                _filtreConversation('Toutes'),
+                const SizedBox(width: 8),
+                _filtreConversation('Non lus', messagesNonLus),
+              ],
             ),
           ),
 
@@ -488,13 +439,9 @@ class _ConversationListScreenState
                 // -----------------------------------------------------------------
 
                 final conversations = conversationsBrutes.where((conversation) {
-                  final correspondRecherche =
-                      _recherche.isEmpty ||
-                      conversation.nom.toLowerCase().contains(
-                        _recherche.toLowerCase(),
-                      );
-                  final correspondFiltre = _filtre == 'Toutes';
-                  return correspondRecherche && correspondFiltre;
+                  final correspondFiltre =
+                      _filtre == 'Toutes' || conversation.nombreNonLus > 0;
+                  return correspondFiltre;
                 }).toList();
 
                 // -----------------------------------------------------------------
@@ -595,7 +542,7 @@ class _ConversationListScreenState
           // ====================================================================
           FloatingActionButton(
             heroTag: 'new_conversation_button',
-            onPressed: _ouvrirMenuNouvelleConversation,
+            onPressed: _ouvrirNouvelleConversation,
             backgroundColor: AppColors.primary,
             shape: const CircleBorder(),
 
@@ -643,6 +590,50 @@ class _ConversationListScreenState
             label: 'Profil',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _filtreConversation(String filtre, [int compteur = 0]) {
+    final actif = _filtre == filtre;
+    return InkWell(
+      onTap: () => setState(() => _filtre = filtre),
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 112),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: actif ? AppColors.primary : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: actif ? AppColors.primary : AppColors.textMuted,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              filtre,
+              style: TextStyle(
+                color: actif ? Colors.white : AppColors.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (compteur > 0) ...[
+              const SizedBox(width: 5),
+              Text(
+                '($compteur)',
+                style: TextStyle(
+                  color: actif ? Colors.white : AppColors.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -737,6 +728,8 @@ class _ContactsRapides extends StatelessWidget {
                             AvatarCircle(
                               initiales: contact.initiales,
                               size: 50,
+                              imageUrl: contact.photoUrl,
+                              estEnLigne: contact.enLigne,
                             ),
 
                             const SizedBox(height: 4),
@@ -761,6 +754,99 @@ class _ContactsRapides extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Recherche de contacts façon Messenger : la liste est visible dès
+/// l'ouverture et se filtre au fur et à mesure de la saisie.
+class _RechercheContactsDialog extends StatefulWidget {
+  const _RechercheContactsDialog({
+    required this.contacts,
+    required this.onContactSelected,
+  });
+
+  final List<AppUserModel> contacts;
+  final ValueChanged<AppUserModel> onContactSelected;
+
+  @override
+  State<_RechercheContactsDialog> createState() =>
+      _RechercheContactsDialogState();
+}
+
+class _RechercheContactsDialogState extends State<_RechercheContactsDialog> {
+  final _controller = TextEditingController();
+  String _recherche = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final terme = _recherche.trim().toLowerCase();
+    final contacts = widget.contacts.where((contact) {
+      return terme.isEmpty || contact.nomComplet.toLowerCase().contains(terme);
+    }).toList();
+
+    return AlertDialog(
+      title: const Text('Rechercher un contact'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 390,
+        child: Column(
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              onChanged: (value) => setState(() => _recherche = value),
+              decoration: InputDecoration(
+                hintText: 'Rechercher',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _recherche.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _recherche = '');
+                        },
+                      ),
+                filled: true,
+                fillColor: AppColors.bgLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: contacts.isEmpty
+                  ? const Center(child: Text('Aucun contact trouvé'))
+                  : ListView.separated(
+                      itemCount: contacts.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 2),
+                      itemBuilder: (context, index) {
+                        final contact = contacts[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: AvatarCircle(
+                            initiales: contact.initiales,
+                            imageUrl: contact.photoUrl,
+                            estEnLigne: contact.enLigne,
+                          ),
+                          title: Text(contact.nomComplet),
+                          onTap: () => widget.onContactSelected(contact),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

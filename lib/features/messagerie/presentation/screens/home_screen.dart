@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/utils/message_date_formatter.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
@@ -11,11 +11,26 @@ import '../../providers/conversation_providers.dart';
 import 'conversation_list_screen.dart';
 import 'profile_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(conversationListProvider.notifier).rafraichir();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -218,11 +233,18 @@ class _AssistantPromo extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/icon2.png',
-                    width: 24,
-                    height: 24,
-                    fit: BoxFit.contain,
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
                   ),
                 ],
               ),
@@ -421,39 +443,18 @@ class _RecentMessageCard extends StatelessWidget {
   final ConversationModel conversation;
   final VoidCallback onTap;
 
-  String _dateAffichee(DateTime date) {
-    final maintenant = DateTime.now();
-    final aujourdHui = DateTime(
-      maintenant.year,
-      maintenant.month,
-      maintenant.day,
-    );
-    final jourMessage = DateTime(date.year, date.month, date.day);
-    final difference = aujourdHui.difference(jourMessage).inDays;
-    final heure = DateFormat('HH:mm').format(date);
-    const jours = [
-      'Lundi',
-      'Mardi',
-      'Mercredi',
-      'Jeudi',
-      'Vendredi',
-      'Samedi',
-      'Dimanche',
-    ];
-
-    if (difference == 0) return heure;
-    if (difference == 1) return 'Hier $heure';
-    if (difference < 7) {
-      return '${jours[date.weekday - 1]} $heure';
-    }
-    return DateFormat('dd/MM/yyyy HH:mm').format(date);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final dernierMessage = conversation.dernierMessage;
+    // Dans « Derniers messages privés », le nom correspond à l'auteur du
+    // dernier message, et non systématiquement au contact de la conversation.
+    final nomExpediteur = dernierMessage?.expediteurNom.trim();
+    final nomAffiche = nomExpediteur == null || nomExpediteur.isEmpty
+        ? conversation.nom
+        : nomExpediteur;
     final initiales =
         conversation.avatarInitiales ??
-        (conversation.nom.isNotEmpty ? conversation.nom[0] : '?');
+        (nomAffiche.isNotEmpty ? nomAffiche[0] : '?');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -473,11 +474,12 @@ class _RecentMessageCard extends StatelessWidget {
           imageUrl: conversation.photoUrl,
         ),
         title: Text(
-          conversation.nom,
+          nomAffiche,
           style: TextStyle(
             color: conversation.nombreNonLus > 0
                 ? AppColors.textPrimary
                 : AppColors.textSecondary,
+            fontSize: conversation.nombreNonLus > 0 ? 15 : 14,
             fontWeight: conversation.nombreNonLus > 0
                 ? FontWeight.w700
                 : FontWeight.w500,
@@ -491,6 +493,7 @@ class _RecentMessageCard extends StatelessWidget {
             color: conversation.nombreNonLus > 0
                 ? AppColors.textPrimary
                 : AppColors.textSecondary,
+            fontSize: conversation.nombreNonLus > 0 ? 14 : 13,
             fontWeight: conversation.nombreNonLus > 0
                 ? FontWeight.w700
                 : FontWeight.w400,
@@ -503,7 +506,9 @@ class _RecentMessageCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _dateAffichee(conversation.dernierMessage!.dateEnvoi),
+                    MessageDateFormatter.format(
+                      conversation.dernierMessage!.dateEnvoi,
+                    ),
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 10,

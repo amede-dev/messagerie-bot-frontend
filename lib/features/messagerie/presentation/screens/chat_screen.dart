@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 
 import '../../../../core/models/conversation_model.dart';
@@ -13,6 +12,7 @@ import '../../../../core/models/message_model.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/network/websocket_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/utils/message_date_formatter.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/attachment_picker_sheet.dart';
@@ -58,8 +58,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
 
     _autreUtilisateurEstEnLigne = widget.conversation.estEnLigne;
-    _derniereConnexionAutreUtilisateur =
-        widget.conversation.derniereConnexion;
+    _derniereConnexionAutreUtilisateur = widget.conversation.derniereConnexion;
 
     _chargerUtilisateurConnecte();
     _ecouterFrappe();
@@ -79,21 +78,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _ecouterPresence() {
-    _presenceSubscription = WebSocketService.instance.presenceStream.listen(
-      (presence) {
-        if (!mounted ||
-            presence.utilisateurId != widget.conversation.utilisateurId) {
-          return;
-        }
+    _presenceSubscription = WebSocketService.instance.presenceStream.listen((
+      presence,
+    ) {
+      if (!mounted ||
+          presence.utilisateurId != widget.conversation.utilisateurId) {
+        return;
+      }
 
-        setState(() {
-          _autreUtilisateurEstEnLigne = presence.enLigne;
-          if (presence.derniereConnexion != null) {
-            _derniereConnexionAutreUtilisateur = presence.derniereConnexion;
-          }
-        });
-      },
-    );
+      setState(() {
+        _autreUtilisateurEstEnLigne = presence.enLigne;
+        if (presence.derniereConnexion != null) {
+          _derniereConnexionAutreUtilisateur = presence.derniereConnexion;
+        }
+      });
+    });
   }
 
   void _ecouterFrappe() {
@@ -325,23 +324,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return 'Hors ligne';
     }
 
-    final maintenant = DateTime.now();
-
-    final difference = maintenant.difference(derniereConnexion);
-
-    if (difference.inMinutes < 1) {
-      return 'Hors ligne à l’instant';
-    }
-
-    if (difference.inMinutes < 60) {
-      return 'Hors ligne il y a ${difference.inMinutes} min';
-    }
-
-    if (difference.inHours < 24) {
-      return 'Hors ligne il y a ${difference.inHours} h';
-    }
-
-    return 'Hors ligne le ${DateFormat('dd/MM à HH:mm').format(derniereConnexion)}';
+    return MessageDateFormatter.formatPresence(derniereConnexion);
   }
 
   // ============================================================
@@ -562,7 +545,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible de supprimer le message pour tout le monde.'),
+          content: Text(
+            'Impossible de supprimer le message pour tout le monde.',
+          ),
         ),
       );
     }

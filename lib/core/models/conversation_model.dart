@@ -119,7 +119,13 @@ class ConversationModel {
       // -----------------------------------------------------------------------
       utilisateurId: json['utilisateurId']?.toString(),
 
-      photoUrl: json['photoUrl'] as String?,
+      // Le backend renvoie normalement photoUrl. Le fallback permet aussi
+      // d'afficher la photo déjà enregistrée lorsque cette valeur manque dans
+      // une ancienne réponse de conversation.
+      photoUrl: json['photoUrl'] as String? ??
+          (json['utilisateurId'] != null
+              ? '/api/users/${json['utilisateurId']}/photo'
+              : null),
 
       // -----------------------------------------------------------------------
       // EN LIGNE

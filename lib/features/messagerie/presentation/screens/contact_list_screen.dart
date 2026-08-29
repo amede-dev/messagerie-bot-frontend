@@ -223,7 +223,11 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
   Widget _ligneContact(AppUserModel contact) {
     final enCours = _idEnCoursDeCreation == contact.id;
     return ListTile(
-      leading: AvatarCircle(initiales: contact.initiales),
+      leading: AvatarCircle(
+        initiales: contact.initiales,
+        imageUrl: contact.photoUrl,
+        estEnLigne: contact.enLigne,
+      ),
       title: Text(contact.nomComplet),
       trailing: enCours
           ? const SizedBox(

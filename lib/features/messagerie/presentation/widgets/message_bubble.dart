@@ -284,9 +284,9 @@ class MessageBubble extends StatelessWidget {
         bytes: Uint8List.fromList(response.data ?? const <int>[]),
       );
       if (chemin != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fichier téléchargé.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Fichier téléchargé.')));
       }
     } catch (error) {
       if (context.mounted) {
@@ -449,7 +449,14 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
       }
 
       final extension = Uri.parse(url).path.split('.').last.toLowerCase();
-      final mimeType = extension == 'mp3' ? 'audio/mpeg' : 'audio/mp4';
+      final mimeType = switch (extension) {
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'aac' => 'audio/aac',
+        'ogg' => 'audio/ogg',
+        'm4a' => 'audio/mp4',
+        _ => 'audio/mp4',
+      };
 
       await _player.play(
         BytesSource(Uint8List.fromList(octets), mimeType: mimeType),
