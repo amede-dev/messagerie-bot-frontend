@@ -26,12 +26,9 @@ class AppUserModel {
     );
   }
 
-  /// Nom affiché, propre quelle que soit la casse d'origine dans la base :
-  /// "AMBOARAMPITIAVANA" / " Nomena Sarobidy " -> "Amboarampitiavana Nomena Sarobidy"
   String get nomComplet =>
       '${_capitaliserMots(nom)} ${_capitaliserMots(prenom)}'.trim();
 
-  /// Initiales utilisées pour l'avatar rond (ex : "NA").
   String get initiales {
     final p = prenom.trim();
     final n = nom.trim();
