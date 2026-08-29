@@ -21,10 +21,7 @@ class _ConversationSettingsScreenState
     extends ConsumerState<ConversationSettingsScreen> {
   bool _enCours = false;
 
-
-  // ============================================================
   // INFORMATION
-  // ============================================================
 
   void _informer(String message) {
     ScaffoldMessenger.of(
@@ -32,9 +29,7 @@ class _ConversationSettingsScreenState
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // ============================================================
   // BLOQUER
-  // ============================================================
 
   Future<void> _confirmerBlocage() async {
     final confirme = await showDialog<bool>(
@@ -74,9 +69,7 @@ class _ConversationSettingsScreenState
     );
   }
 
-  // ============================================================
   // SUPPRIMER / QUITTER
-  // ============================================================
 
   Future<void> _supprimerConversation() async {
     final confirme = await showDialog<bool>(
@@ -138,9 +131,7 @@ class _ConversationSettingsScreenState
     }
   }
 
-  // ============================================================
   // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -194,9 +185,7 @@ class _ConversationSettingsScreenState
   ];
 }
 
-// ============================================================
 // TITRE SECTION
-// ============================================================
 
 class _TitreSection extends StatelessWidget {
   const _TitreSection(this.titre);
@@ -220,9 +209,7 @@ class _TitreSection extends StatelessWidget {
   }
 }
 
-// ============================================================
 // RACCOURCI
-// ============================================================
 
 class _Raccourci extends StatelessWidget {
   const _Raccourci({
@@ -273,9 +260,7 @@ class _Raccourci extends StatelessWidget {
   }
 }
 
-// ============================================================
 // OPTION
-// ============================================================
 
 class _Option extends StatelessWidget {
   const _Option({
