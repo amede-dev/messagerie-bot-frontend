@@ -17,11 +17,8 @@ import 'contact_list_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
-/// Écran principal de la messagerie.
-///
-/// Uni AI n'est pas affiché dans la liste des conversations.
-/// Il est accessible uniquement par son bouton flottant,
-/// placé juste au-dessus du bouton "+".
+// Écran principal de la messagerie.
+
 class ConversationListScreen extends ConsumerStatefulWidget {
   const ConversationListScreen({super.key});
 
@@ -36,15 +33,12 @@ class _ConversationListScreenState
 
   String _filtre = 'Toutes';
 
-  // ===========================================================================
   // INITIALISATION
-  // ===========================================================================
 
   @override
   void initState() {
     super.initState();
-    // L'écran affiche désormais toutes les conversations ; le filtre
-    // « Privées » n'est plus présenté dans l'interface.
+    // L'écran affiche désormais toutes les conversations 
     _filtre = 'Toutes';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -58,12 +52,8 @@ class _ConversationListScreenState
     super.dispose();
   }
 
-  // ===========================================================================
   // RECHERCHE
-  // ===========================================================================
 
-  /// La recherche n'occupe plus une ligne permanente dans l'écran.
-  /// La loupe ouvre l'annuaire avec les photos et le filtrage instantané.
   Future<void> _ouvrirRecherche() async {
     late final List<AppUserModel> contacts;
     try {
@@ -95,33 +85,23 @@ class _ConversationListScreenState
     }
   }
 
-  // ===========================================================================
   // UNI AI
-  // ===========================================================================
 
-  /// Ouvre directement la conversation avec Uni AI.
-  ///
-  /// Uni AI n'est PAS ajouté à la liste des conversations.
   Future<void> _ouvrirUni() async {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const BotChatScreen()));
   }
 
-  // ===========================================================================
   // NOUVELLE CONVERSATION
-  // ===========================================================================
-
-  /// Le bouton "+" ouvre directement l'annuaire des contacts.
+  
   Future<void> _ouvrirNouvelleConversation() async {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ContactListScreen()));
   }
 
-  // ===========================================================================
   // DÉMARRER UNE DISCUSSION AVEC UN CONTACT
-  // ===========================================================================
 
   Future<void> _demarrerConversationAvec(AppUserModel contact) async {
     try {
@@ -152,9 +132,7 @@ class _ConversationListScreenState
     }
   }
 
-  // ===========================================================================
   // ACTIONS SUR UNE CONVERSATION
-  // ===========================================================================
 
   Future<void> _ouvrirActionsConversation(
     ConversationModel conversation,
@@ -249,9 +227,7 @@ class _ConversationListScreenState
     }
   }
 
-  // ===========================================================================
   // DÉCONNEXION
-  // ===========================================================================
 
   Future<void> _seDeconnecter() async {
     final confirme = await showDialog<bool>(
@@ -299,9 +275,7 @@ class _ConversationListScreenState
     );
   }
 
-  // ===========================================================================
   // BUILD
-  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -310,9 +284,7 @@ class _ConversationListScreenState
     final contactsAsync = ref.watch(contactsUniversitairesProvider);
 
     return Scaffold(
-      // ========================================================================
       // APP BAR
-      // ========================================================================
       appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 16,
@@ -344,13 +316,9 @@ class _ConversationListScreenState
         ],
       ),
 
-      // ========================================================================
       // BODY
-      // ========================================================================
       body: Column(
         children: [
-          // Contacts horizontaux, comme dans Messenger : ils apparaissent
-          // immédiatement sous le titre, avant les filtres.
           _ContactsRapides(
             contactsAsync: contactsAsync,
             onContactTap: _demarrerConversationAvec,
@@ -367,21 +335,15 @@ class _ConversationListScreenState
             ),
           ),
 
-          // ---------------------------------------------------------------------
           // LISTE DES CONVERSATIONS
-          // ---------------------------------------------------------------------
           Expanded(
             child: conversationsAsync.when(
-              // =================================================================
               // CHARGEMENT
-              // =================================================================
               loading: () {
                 return const Center(child: CircularProgressIndicator());
               },
 
-              // =================================================================
               // ERREUR
-              // =================================================================
               error: (err, _) {
                 return Center(
                   child: Padding(
@@ -430,13 +392,9 @@ class _ConversationListScreenState
                 );
               },
 
-              // =================================================================
               // DONNÉES
-              // =================================================================
               data: (conversationsBrutes) {
-                // -----------------------------------------------------------------
                 // FILTRAGE DES CONVERSATIONS
-                // -----------------------------------------------------------------
 
                 final conversations = conversationsBrutes.where((conversation) {
                   final correspondFiltre =
@@ -444,9 +402,7 @@ class _ConversationListScreenState
                   return correspondFiltre;
                 }).toList();
 
-                // -----------------------------------------------------------------
                 // AUCUN RÉSULTAT
-                // -----------------------------------------------------------------
 
                 if (conversations.isEmpty) {
                   return const Center(
@@ -454,9 +410,7 @@ class _ConversationListScreenState
                   );
                 }
 
-                // -----------------------------------------------------------------
                 // LISTE
-                // -----------------------------------------------------------------
 
                 return RefreshIndicator(
                   onRefresh: () async {
@@ -500,24 +454,11 @@ class _ConversationListScreenState
         ],
       ),
 
-      // ========================================================================
       // BOUTONS FLOTTANTS
-      // ========================================================================
-      //
-      //                    ✨
-      //                 Uni AI
-      //                    │
-      //                    ↓
-      //                   (+)
-      //
-      // Uni AI est complètement séparé du bouton "+".
-      // ========================================================================
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ====================================================================
           // BOUTON UNI AI
-          // ====================================================================
           Tooltip(
             message: 'Ouvrir Uni AI',
             child: Material(
@@ -537,9 +478,7 @@ class _ConversationListScreenState
 
           const SizedBox(height: 12),
 
-          // ====================================================================
           // BOUTON +
-          // ====================================================================
           FloatingActionButton(
             heroTag: 'new_conversation_button',
             onPressed: _ouvrirNouvelleConversation,
@@ -639,9 +578,7 @@ class _ConversationListScreenState
   }
 }
 
-// =============================================================================
 // CONTACTS RAPIDES
-// =============================================================================
 
 class _ContactsRapides extends StatelessWidget {
   const _ContactsRapides({
@@ -656,9 +593,7 @@ class _ContactsRapides extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return contactsAsync.when(
-      // -------------------------------------------------------------------------
       // CHARGEMENT
-      // -------------------------------------------------------------------------
       loading: () {
         return const SizedBox(
           height: 98,
@@ -666,16 +601,12 @@ class _ContactsRapides extends StatelessWidget {
         );
       },
 
-      // -------------------------------------------------------------------------
       // ERREUR
-      // -------------------------------------------------------------------------
       error: (_, __) {
         return const SizedBox.shrink();
       },
 
-      // -------------------------------------------------------------------------
       // DONNÉES
-      // -------------------------------------------------------------------------
       data: (contacts) {
         if (contacts.isEmpty) {
           return const SizedBox.shrink();
@@ -758,8 +689,7 @@ class _ContactsRapides extends StatelessWidget {
   }
 }
 
-/// Recherche de contacts façon Messenger : la liste est visible dès
-/// l'ouverture et se filtre au fur et à mesure de la saisie.
+// Recherche de contacts 
 class _RechercheContactsDialog extends StatefulWidget {
   const _RechercheContactsDialog({
     required this.contacts,
