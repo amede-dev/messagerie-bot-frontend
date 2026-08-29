@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 
 // Écran "Médias partagés" — accessible depuis les paramètres d'une conversation.
-// Pour l'instant vide car aucune pièce jointe n'a encore été échangée
-// dans les données factices (mode mock). Une fois le backend branché,
-// cet écran listera les messages de type IMAGE/DOCUMENT en grille.
 class SharedMediaScreen extends StatelessWidget {
   final String conversationNom;
 
