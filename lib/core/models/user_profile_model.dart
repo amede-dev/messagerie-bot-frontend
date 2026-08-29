@@ -29,8 +29,7 @@ class UserProfileModel {
     );
   }
 
-  /// Format d'affichage officiel de l'université : NOM Prénom.
-  /// Exemple : RAKOTONANDRASANA Amedé.
+  // Format d'affichage
   String get nomComplet => '$nom $prenom'.trim();
 
   String? get formation {
