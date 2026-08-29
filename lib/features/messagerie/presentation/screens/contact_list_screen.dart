@@ -7,14 +7,8 @@ import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 import 'chat_screen.dart';
 
-/// Écran « Nouvelle discussion » : carnet de contacts affichant tous les
-/// utilisateurs de l'université (table `app_user`, peuplée à partir de
-/// `Liste_consolidee_ENI_sans_doublons.xlsx`), façon application de
-/// messagerie classique (recherche + liste triée).
-///
-/// Sélectionner un contact récupère son identifiant (`AppUserModel.id`)
-/// et démarre — ou rouvre si elle existe déjà — la conversation privée
-/// (1 à 1) correspondante.
+// Écran « Nouvelle discussion » : carnet de contacts affichant tous les utilisateurs 
+
 class ContactListScreen extends ConsumerStatefulWidget {
   const ContactListScreen({super.key});
 
@@ -30,9 +24,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
   String? _erreur;
   List<AppUserModel> _contacts = [];
 
-  // Identifiant du contact sur lequel on vient de taper : affiche un
-  // loader sur sa ligne et bloque les autres taps pendant la création
-  // (ou la récupération) de la conversation.
+  // Identifiant du contact sur lequel on vient de taper 
   String? _idEnCoursDeCreation;
 
   @override
@@ -81,10 +73,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
         .toList();
   }
 
-  /// Récupère l'identifiant du contact sélectionné et lance la
-  /// conversation privée : le backend renvoie la discussion existante si
-  /// elle existe déjà (voir ConversationService.creer côté Spring Boot),
-  /// donc aucun doublon n'est créé en resélectionnant le même contact.
+  // Récupère l'identifiant du contact sélectionné et lance la conversation privée
   Future<void> _demarrerConversationAvec(AppUserModel contact) async {
     if (_idEnCoursDeCreation != null) return; // évite le double-tap
     setState(() => _idEnCoursDeCreation = contact.id);
@@ -96,13 +85,11 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
           .read(conversationRepositoryProvider)
           .creerConversationPrivee(contact.id);
 
-      // Rafraîchit la liste d'accueil pour que la discussion (nouvelle ou
-      // retrouvée) y apparaisse immédiatement au retour.
+      // Rafraîchit la liste d'accueil pour que la discussion 
       await ref.read(conversationListProvider.notifier).rafraichir();
 
       if (!mounted) return;
-      // Retire l'écran "Nouvelle discussion" de la pile puis ouvre le
-      // chat : le bouton retour ramène directement à la liste des messages.
+    
       navigator.pop();
       navigator.push(
         MaterialPageRoute(
