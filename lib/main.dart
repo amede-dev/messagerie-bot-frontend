@@ -22,9 +22,7 @@ class MessagerieApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      // Le prototype Design.html est une interface claire. Ne pas reprendre
-      // le thème sombre du système : les textes noirs du prototype seraient
-      // illisibles sur fond noir.
+    
       themeMode: ThemeMode.light,
       home: const _StartupGate(),
     );
