@@ -110,9 +110,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  // ============================================================
   // UTILISATEUR CONNECTÉ
-  // ============================================================
 
   Future<void> _chargerUtilisateurConnecte() async {
     final id = await _authRepository.idUtilisateurConnecte();
@@ -124,9 +122,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  // ============================================================
   // SCROLL
-  // ============================================================
 
   void _scrollEnBas({bool anime = true}) {
     if (!_scrollController.hasClients) {
@@ -146,9 +142,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ============================================================
   // GALERIE
-  // ============================================================
 
   Future<void> _choisirEtEnvoyerImage() async {
     try {
@@ -189,9 +183,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ============================================================
   // MESSAGE VOCAL
-  // ============================================================
 
   Future<void> _demarrerMessageVocal() async {
     try {
@@ -299,9 +291,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  // ============================================================
   // ACTION NON DISPONIBLE
-  // ============================================================
 
   void _annoncerAction(String action) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -309,9 +299,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  // ============================================================
   // PRÉSENCE
-  // ============================================================
 
   String _statutPresence() {
     if (_autreUtilisateurEstEnLigne) {
@@ -327,9 +315,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return MessageDateFormatter.formatPresence(derniereConnexion);
   }
 
-  // ============================================================
   // MARQUER COMME LU
-  // ============================================================
 
   Future<void> _marquerMessagesCommeLus() async {
     if (_miseAJourLectureEnCours) {
@@ -356,9 +342,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ============================================================
   // ACTION MESSAGE
-  // ============================================================
 
   Future<void> _ouvrirActionsMessage(
     MessageModel message,
@@ -476,9 +460,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ============================================================
   // SUPPRESSION MESSAGE
-  // ============================================================
 
   Future<void> _choisirSuppressionMessage(MessageModel message) async {
     final portee = await showModalBottomSheet<String>(
@@ -553,9 +535,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ============================================================
   // ENVOYER TEXTE
-  // ============================================================
 
   void _envoyerTexte(String texte) {
     final texteNettoye = texte.trim();
@@ -571,9 +551,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollEnBas());
   }
 
-  // ============================================================
   // TYPING
-  // ============================================================
 
   void _notifierFrappe() {
     ref
@@ -581,9 +559,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .notifierFrappe();
   }
 
-  // ============================================================
   // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -592,9 +568,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     return Scaffold(
-      // ==========================================================
       // APP BAR
-      // ==========================================================
       appBar: AppBar(
         titleSpacing: 0,
 
@@ -678,9 +652,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ],
       ),
 
-      // ==========================================================
       // BODY
-      // ==========================================================
       body: Column(
         children: [
           Expanded(
