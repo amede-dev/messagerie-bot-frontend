@@ -44,9 +44,7 @@ class MessageSuppressionModel {
   }
 }
 
-/// ============================================================================
-/// WEBSOCKET SERVICE
-/// ============================================================================
+// WEBSOCKET SERVICE
 
 class WebSocketService {
   WebSocketService._internal();
@@ -56,10 +54,8 @@ class WebSocketService {
   StompClient? _client;
 
   final _storage = const FlutterSecureStorage();
-
-  // ==========================================================================
+  
   // STREAM DES MESSAGES
-  // ==========================================================================
 
   final _messageController = StreamController<MessageModel>.broadcast();
 
@@ -71,46 +67,34 @@ class WebSocketService {
   Stream<MessageSuppressionModel> get messageSuppressionStream =>
       _messageSuppressionController.stream;
 
-  // ==========================================================================
   // STREAM "EN TRAIN D'ÉCRIRE"
-  // ==========================================================================
 
   final _typingController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
 
-  // ==========================================================================
   // STREAM DE PRÉSENCE
-  // ==========================================================================
 
   final _presenceController = StreamController<PresenceModel>.broadcast();
 
   Stream<PresenceModel> get presenceStream => _presenceController.stream;
 
-  // ==========================================================================
   // ÉTAT DE CONNEXION
-  // ==========================================================================
 
   Completer<void> _connectedCompleter = Completer<void>();
 
   bool _isConnected = false;
 
-  // ==========================================================================
   // CONNECTER LE WEBSOCKET
-  // ==========================================================================
 
   Future<void> connect() async {
-    // ------------------------------------------------------------------------
     // Mode mock
-    // ------------------------------------------------------------------------
 
     if (AppConfig.useMockBackend) {
       return;
     }
 
-    // ------------------------------------------------------------------------
     // Récupérer le JWT
-    // ------------------------------------------------------------------------
 
     final token = await _storage.read(key: 'jwt_token');
 
@@ -118,19 +102,15 @@ class WebSocketService {
       return;
     }
 
-    // ------------------------------------------------------------------------
     // Réinitialiser le Completer
-    // ------------------------------------------------------------------------
 
     if (_connectedCompleter.isCompleted) {
       _connectedCompleter = Completer<void>();
     }
 
     _isConnected = false;
-
-    // ------------------------------------------------------------------------
+    
     // Créer le client STOMP
-    // ------------------------------------------------------------------------
 
     _client = StompClient(
       config: StompConfig(
@@ -175,16 +155,12 @@ class WebSocketService {
       ),
     );
 
-    // ------------------------------------------------------------------------
     // Activer WebSocket
-    // ------------------------------------------------------------------------
 
     _client!.activate();
   }
 
-  // ==========================================================================
   // CONNEXION STOMP RÉUSSIE
-  // ==========================================================================
 
   void _onConnect(StompFrame frame) {
     _isConnected = true;
@@ -193,9 +169,7 @@ class WebSocketService {
       _connectedCompleter.complete();
     }
 
-    // ========================================================================
     // NOTIFICATIONS / MESSAGES
-    // ========================================================================
 
     _client?.subscribe(
       destination: '/user/queue/notifications',
@@ -217,9 +191,7 @@ class WebSocketService {
       },
     );
 
-    // ========================================================================
     // PRÉSENCE DES UTILISATEURS
-    // ========================================================================
 
     _client?.subscribe(
       destination: '/topic/presence',
@@ -242,9 +214,7 @@ class WebSocketService {
     );
   }
 
-  // ==========================================================================
   // ATTENDRE LA CONNEXION
-  // ==========================================================================
 
   Future<void> _ensureConnected() async {
     if (_isConnected) {
@@ -259,9 +229,7 @@ class WebSocketService {
     }
   }
 
-  // ==========================================================================
   // S'ABONNER À UNE CONVERSATION
-  // ==========================================================================
 
   Future<void> subscribeToConversation(String conversationId) async {
     await _ensureConnected();
@@ -317,9 +285,7 @@ class WebSocketService {
     );
   }
 
-  // ==========================================================================
   // ENVOYER UN MESSAGE
-  // ==========================================================================
 
   Future<void> envoyerMessage({
     required String conversationId,
@@ -345,9 +311,7 @@ class WebSocketService {
     );
   }
 
-  // ==========================================================================
   // NOTIFIER "EN TRAIN D'ÉCRIRE"
-  // ==========================================================================
 
   Future<void> notifierEnTrainDecrire(String conversationId) async {
     await _ensureConnected();
@@ -359,9 +323,7 @@ class WebSocketService {
     );
   }
 
-  // ==========================================================================
   // DÉCONNECTER LE WEBSOCKET
-  // ==========================================================================
 
   Future<void> disconnect() async {
     try {
