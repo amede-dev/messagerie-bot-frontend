@@ -8,7 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 
-/// Sélectionne un contact et transmet une copie du message dans sa discussion.
+// Sélectionne un contact et transmet une copie du message dans sa discussion.
 class ForwardMessageScreen extends ConsumerStatefulWidget {
   const ForwardMessageScreen({super.key, required this.message});
 
