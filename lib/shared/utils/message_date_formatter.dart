@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-/// Format court utilisé pour les dates du dernier message.
+// Format court utilisé pour les dates du dernier message.
 class MessageDateFormatter {
   const MessageDateFormatter._();
 
