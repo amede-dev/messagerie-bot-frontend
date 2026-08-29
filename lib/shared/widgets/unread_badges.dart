@@ -16,10 +16,7 @@ class UnreadMessagesBadge extends ConsumerWidget {
   }
 }
 
-/// Nombre total de messages entrants non lus.
-///
-/// Ce compteur est volontairement indépendant des notifications générales :
-/// les messages doivent être affichés sur l'icône « Messages » uniquement.
+// Nombre total de messages entrants non lus.
 final unreadMessagesCountProvider = Provider<int>((ref) {
   final conversations =
       ref.watch(conversationListProvider).valueOrNull ?? const [];
