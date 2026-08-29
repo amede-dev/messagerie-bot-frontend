@@ -1,8 +1,4 @@
-/// Conversion des dates produites par Spring Boot.
-///
-/// Le backend utilise LocalDateTime et ne sérialise donc pas de fuseau horaire.
-/// Dans l'environnement déployé, cette valeur correspond à UTC. Elle doit être
-/// convertie vers l'heure locale du téléphone avant l'affichage.
+// Conversion des dates produites par Spring Boot.
 class ApiDateTime {
   ApiDateTime._();
 
