@@ -10,10 +10,7 @@ import '../../../messagerie/presentation/widgets/message_bubble.dart';
 import '../../providers/bot_providers.dart';
 import '../widgets/quick_reply_chip.dart';
 
-// Écran de discussion avec l'assistant "Uni AI" : reproduit la
-// disposition de l'assistant IA natif d'une messagerie grand public —
-// écran d'accueil vide avec logo + mentions légales tant qu'aucun
-// message n'a été envoyé, puis fil de discussion classique ensuite.
+// Écran de discussion avec l'assistant "Uni AI" 
 class BotChatScreen extends ConsumerWidget {
   const BotChatScreen({super.key});
 
@@ -146,9 +143,7 @@ class BotChatScreen extends ConsumerWidget {
   }
 }
 
-// Écran d'accueil affiché tant qu'aucun message n'a été échangé avec
-// l'assistant : grand logo, nom, mentions légales — à l'identique de
-// l'écran d'accueil d'un assistant IA de messagerie classique.
+// Écran d'accueil affiché 
 class _UniEmptyState extends StatelessWidget {
   const _UniEmptyState();
 
