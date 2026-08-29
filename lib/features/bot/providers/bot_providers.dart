@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/network/api_client.dart';
 
-// Un message affiché dans le chat bot : soit celui de l'utilisateur,
-// soit la réponse du bot avec ses suggestions éventuelles.
+// le chat bot : soit celui de l'utilisateur,soit la réponse du bot avec ses suggestions éventuelles.
 class BotChatEntry {
   final MessageModel message;
   final List<String> suggestions;
@@ -19,8 +18,7 @@ final botChatProvider = NotifierProvider<BotChatNotifier, List<BotChatEntry>>(
 class BotChatNotifier extends Notifier<List<BotChatEntry>> {
   @override
   List<BotChatEntry> build() {
-    // Écran d'accueil vide, comme un assistant IA natif : aucun message
-    // n'est pré-rempli tant que l'utilisateur n'a pas écrit.
+ 
     return [];
   }
 
