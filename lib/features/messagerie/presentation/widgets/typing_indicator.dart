@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-// Trois points animés + nom, affichés en bas du chat quand un
 // interlocuteur est en train d'écrire.
 class TypingIndicator extends StatefulWidget {
   final String nomUtilisateur;
