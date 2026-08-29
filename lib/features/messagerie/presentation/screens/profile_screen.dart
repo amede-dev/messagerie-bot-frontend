@@ -36,8 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final uri = Uri.tryParse(url);
     if (uri == null) return null;
 
-    // Une URL localhost enregistrée depuis un test local n'est pas accessible
-    // depuis le téléphone. On conserve son chemin et on le relie au backend.
     if (uri.host == 'localhost' || uri.host == '127.0.0.1' || !uri.hasScheme) {
       return '${AppConfig.apiBaseUrl}${uri.path}';
     }
