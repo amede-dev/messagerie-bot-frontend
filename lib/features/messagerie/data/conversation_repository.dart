@@ -34,10 +34,8 @@ class ConversationRepository {
     return messages;
   }
 
-  /// Annuaire des utilisateurs de l'université, issu de la table `app_user`
-  /// (peuplée à partir de `Liste_consolidee_ENI_sans_doublons.xlsx`).
-  /// Utilisé par l'écran "Nouvelle discussion" (contact_list_screen.dart)
-  /// depuis l'écran de nouvelle discussion privée.
+  // Annuaire des utilisateurs, issu de la table `app_user`
+
   Future<List<AppUserModel>> fetchUsers() async {
     if (AppConfig.useMockBackend) {
       return const [AppUserModel(id: '2', nom: 'Rakoto', prenom: 'Hery')];
@@ -49,11 +47,7 @@ class ConversationRepository {
         .toList();
   }
 
-  /// Démarre (ou rouvre) une conversation privée (1 à 1) avec l'utilisateur
-  /// dont l'identifiant est [autreUtilisateurId]. Côté backend, si une
-  /// conversation privée existe déjà entre les deux utilisateurs, elle est
-  /// retournée telle quelle : jamais de doublon, même en sélectionnant
-  /// plusieurs fois le même contact dans l'annuaire.
+  // Démarre une conversation privée avec l'utilisat dont l'identifiant est [autreUtilisateurId]. 
   Future<ConversationModel> creerConversationPrivee(
     String autreUtilisateurId,
   ) async {
@@ -118,9 +112,7 @@ class ConversationRepository {
     await _api.bloquerUtilisateur(userId);
   }
 
-  /// Retirer une conversation privée.
-  /// En mode mock : aucun appel réseau, le retrait visuel est géré côté
-  /// provider (retirerConversation). Sinon : DELETE /api/conversations/{id}.
+  // Retirer une conversation privée.
   Future<void> quitterConversation(String conversationId) async {
     if (AppConfig.useMockBackend) return;
     await _api.quitterConversation(conversationId);
