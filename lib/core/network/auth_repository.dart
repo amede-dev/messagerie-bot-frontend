@@ -9,9 +9,7 @@ class AuthRepository {
 
   final _storage = const FlutterSecureStorage();
 
-  // ==========================================================================
   // LOGIN
-  // ==========================================================================
 
   Future<void> login(String email, String motDePasse) async {
     final response = await _api.login(email, motDePasse);
@@ -19,9 +17,7 @@ class AuthRepository {
     await _enregistrerToken(response.data);
   }
 
-  // ==========================================================================
   // INSCRIPTION
-  // ==========================================================================
 
   Future<void> inscrire({
     required String nom,
@@ -45,9 +41,7 @@ class AuthRepository {
     await _enregistrerToken(response.data);
   }
 
-  // ==========================================================================
   // ENREGISTRER LE TOKEN
-  // ==========================================================================
 
   Future<void> _enregistrerToken(dynamic donnees) async {
     final token = donnees['token'] as String;
@@ -60,17 +54,14 @@ class AuthRepository {
     );
   }
 
-  // ==========================================================================
   // ID UTILISATEUR CONNECTÉ
-  // ==========================================================================
 
   Future<String?> idUtilisateurConnecte() {
     return _storage.read(key: 'utilisateur_id');
   }
 
-  // ==========================================================================
+
   // VÉRIFIER LA CONNEXION
-  // ==========================================================================
 
   Future<bool> estConnecte() async {
     final token = await _storage.read(key: 'jwt_token');
@@ -78,29 +69,13 @@ class AuthRepository {
     return token != null;
   }
 
-  // ==========================================================================
   // DÉCONNEXION
-  // ==========================================================================
 
   Future<void> deconnexion() async {
-    // ------------------------------------------------------------------------
-    // IMPORTANT :
-    //
-    // On ferme d'abord le WebSocket.
-    //
-    // Le backend reçoit alors SessionDisconnectEvent
-    // et peut enregistrer :
-    //
-    // enLigne = false
-    // derniereConnexion = maintenant
-    //
-    // ------------------------------------------------------------------------
 
     await WebSocketService.instance.disconnect();
 
-    // ------------------------------------------------------------------------
     // Ensuite seulement supprimer le JWT.
-    // ------------------------------------------------------------------------
 
     await _storage.delete(key: 'jwt_token');
 
