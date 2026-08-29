@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-/// Barre de saisie en bas de l'écran de chat : pièce jointe, champ texte,
-// bouton d'envoi, galerie et vocal.
+/// Barre de saisie en bas de l'écran de chat : pièce jointe, champ texte, bouton d'envoi, galerie et vocal.
 
 class ChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSend;
