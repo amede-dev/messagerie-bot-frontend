@@ -12,17 +12,13 @@ import '../data/conversation_repository.dart';
 
 import '../../../core/network/file_upload_service.dart';
 
-// =============================================================================
 // REPOSITORY
-// =============================================================================
 
 final conversationRepositoryProvider = Provider(
   (ref) => ConversationRepository(),
 );
 
-// =============================================================================
 // CONTACTS UNIVERSITAIRES
-// =============================================================================
 
 final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
   ref,
@@ -36,10 +32,7 @@ final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
   return contacts;
 });
 
-// =============================================================================
-// =============================================================================
 // LISTE DES CONVERSATIONS
-// =============================================================================
 
 final conversationListProvider =
     AsyncNotifierProvider<ConversationListNotifier, List<ConversationModel>>(
@@ -52,9 +45,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
   StreamSubscription<PresenceModel>? _presenceSubscription;
   String? _utilisateurCourantId;
 
-  // ===========================================================================
   // TRI DES CONVERSATIONS
-  // ===========================================================================
 
   List<ConversationModel> _trierConversations(
     List<ConversationModel> conversations,
@@ -84,32 +75,24 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     return resultat;
   }
 
-  // ===========================================================================
   // BUILD
-  // ===========================================================================
 
   @override
   Future<List<ConversationModel>> build() async {
     _utilisateurCourantId = await AuthRepository().idUtilisateurConnecte();
-    // -------------------------------------------------------------------------
     // Écouter les nouveaux messages
-    // -------------------------------------------------------------------------
 
     _messageSubscription ??= WebSocketService.instance.messageStream.listen(
       _traiterNouveauMessage,
     );
 
-    // -------------------------------------------------------------------------
     // Écouter la présence
-    // -------------------------------------------------------------------------
 
     _presenceSubscription ??= WebSocketService.instance.presenceStream.listen(
       _traiterPresence,
     );
 
-    // -------------------------------------------------------------------------
     // Nettoyage
-    // -------------------------------------------------------------------------
 
     ref.onDispose(() {
       _messageSubscription?.cancel();
@@ -119,9 +102,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
       _presenceSubscription = null;
     });
 
-    // -------------------------------------------------------------------------
     // Charger les conversations
-    // -------------------------------------------------------------------------
 
     final conversations = await ref
         .read(conversationRepositoryProvider)
@@ -130,9 +111,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     return _trierConversations(conversations);
   }
 
-  // ===========================================================================
   // RAFRAÎCHIR
-  // ===========================================================================
 
   Future<void> rafraichir() async {
     state = const AsyncLoading();
@@ -146,9 +125,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     });
   }
 
-  // ===========================================================================
   // NOUVEAU MESSAGE REÇU
-  // ===========================================================================
 
   void _traiterNouveauMessage(MessageModel message) {
     final actuel = state.valueOrNull;
@@ -204,13 +181,10 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     nouvelleListe[index] = conversationMiseAJour;
 
     // Le nouveau message place la conversation
-    // en première position.
     state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  // ===========================================================================
   // PRÉSENCE
-  // ===========================================================================
 
   void _traiterPresence(PresenceModel presence) {
     final actuel = state.valueOrNull;
@@ -220,26 +194,20 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     }
 
     final nouvelleListe = actuel.map((conversation) {
-      // ---------------------------------------------------------------------
       // La présence est suivie uniquement pour les conversations privées.
-      // ---------------------------------------------------------------------
 
       if (conversation.type != ConversationType.privee) {
         return conversation;
       }
 
-      // ---------------------------------------------------------------------
-      // Vérifier que cette conversation
-      // correspond à l'utilisateur concerné.
-      // ---------------------------------------------------------------------
+      // Vérifier que cette conversation correspond à l'utilisateur concerné.
+
 
       if (conversation.utilisateurId != presence.utilisateurId) {
         return conversation;
       }
 
-      // ---------------------------------------------------------------------
       // Mettre à jour la présence.
-      // ---------------------------------------------------------------------
       return ConversationModel(
         id: conversation.id,
         type: conversation.type,
@@ -261,9 +229,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  // ===========================================================================
   // RETIRER UNE CONVERSATION
-  // ===========================================================================
 
   void retirerConversation(String conversationId) {
     final actuel = state.valueOrNull;
@@ -279,9 +245,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  // ===========================================================================
   // MARQUER COMME LUE
-  // ===========================================================================
 
   void marquerConversationLue(String conversationId) {
     final actuel = state.valueOrNull;
@@ -301,9 +265,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  // ===========================================================================
   // RENOMMER
-  // ===========================================================================
 
   void renommerConversation(String conversationId, String nom) {
     final actuel = state.valueOrNull;
@@ -323,8 +285,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     state = AsyncData(_trierConversations(nouvelleListe));
   }
 
-  /// Met à jour immédiatement le dernier message dans l'accueil et la liste
-  /// après une modification confirmée par le backend.
+  // Met à jour immédiatement le dernier message dans l'accueil et la liste
   void mettreAJourMessage(MessageModel message) {
     final actuel = state.valueOrNull;
     if (actuel == null) return;
@@ -338,9 +299,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
   }
 }
 
-// =============================================================================
 // MESSAGES D'UNE CONVERSATION
-// =============================================================================
 
 final chatMessagesProvider =
     AsyncNotifierProvider.family<
@@ -357,9 +316,7 @@ class ChatMessagesNotifier
   bool _chargementPagePrecedente = false;
   bool _aEncoreDesMessages = true;
 
-  // ===========================================================================
   // BUILD
-  // ===========================================================================
 
   @override
   Future<List<MessageModel>> build(String conversationId) async {
@@ -417,10 +374,7 @@ class ChatMessagesNotifier
     }
   }
 
-  // ===========================================================================
   // AJOUTER UN MESSAGE
-  // ===========================================================================
-
   void _ajouterMessage(MessageModel message) {
     final actuel = state.valueOrNull ?? [];
 
@@ -442,9 +396,7 @@ class ChatMessagesNotifier
     state = AsyncData([...actuel, message]);
   }
 
-  // ===========================================================================
   // SUPPRIMER LOCALEMENT
-  // ===========================================================================
 
   void supprimerMessageLocalement(String messageId) {
     final actuel = state.valueOrNull ?? const <MessageModel>[];
@@ -454,9 +406,7 @@ class ChatMessagesNotifier
     );
   }
 
-  // ===========================================================================
   // ENVOYER
-  // ===========================================================================
 
   Future<void> envoyer(String texte) async {
     final message = await ref
@@ -473,9 +423,7 @@ class ChatMessagesNotifier
     ref.read(conversationListProvider.notifier).mettreAJourMessage(message);
   }
 
-  // ===========================================================================
   // MARQUER LU
-  // ===========================================================================
 
   Future<void> marquerMessagesEntrantsCommeLus(
     String utilisateurCourantId,
@@ -513,15 +461,12 @@ class ChatMessagesNotifier
     );
   }
 
-  // ===========================================================================
   // PIÈCE JOINTE
-  // ===========================================================================
 
   Future<void> envoyerFichier(File fichier, MessageType type) async {
     final fichierEnvoye = await FileUploadService.instance.upload(fichier);
 
-    // L'URL du fichier est enregistrée comme message via REST. Le backend
-    // diffuse ensuite le message aux deux participants par WebSocket.
+    // L'URL du fichier est enregistrée comme message via REST. 
     final message = await ref
         .read(conversationRepositoryProvider)
         .envoyerMessage(arg, fichierEnvoye.url, type: type);
@@ -529,9 +474,7 @@ class ChatMessagesNotifier
     _ajouterMessage(message);
   }
 
-  // ===========================================================================
   // EN TRAIN D'ÉCRIRE
-  // ===========================================================================
 
   void notifierFrappe() {
     WebSocketService.instance.notifierEnTrainDecrire(arg);
