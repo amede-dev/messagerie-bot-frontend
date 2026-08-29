@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-/// Résultat d'une sélection de pièce jointe.
+// Résultat d'une sélection de pièce jointe.
 class SelectionPieceJointe {
   final File fichier;
   final bool estImage;
@@ -12,7 +12,7 @@ class SelectionPieceJointe {
   const SelectionPieceJointe({required this.fichier, required this.estImage});
 }
 
-/// Ouvre la galerie et sélectionne une image.
+// Ouvre la galerie et sélectionne une image.
 Future<SelectionPieceJointe?> choisirImageDepuisGalerie() async {
   final picker = ImagePicker();
 
@@ -28,7 +28,7 @@ Future<SelectionPieceJointe?> choisirImageDepuisGalerie() async {
   return SelectionPieceJointe(fichier: File(image.path), estImage: true);
 }
 
-/// Ouvre le sélecteur de fichiers.
+// Ouvre le sélecteur de fichiers.
 Future<SelectionPieceJointe?> choisirFichier() async {
   final resultat = await FilePicker.platform.pickFiles(
     allowMultiple: false,
@@ -48,7 +48,7 @@ Future<SelectionPieceJointe?> choisirFichier() async {
   return SelectionPieceJointe(fichier: fichier, estImage: estImage);
 }
 
-/// Bottom sheet permettant de choisir le type de pièce jointe.
+// Bottom sheet permettant de choisir le type de pièce jointe.
 Future<SelectionPieceJointe?> afficherAttachmentPicker(
   BuildContext context,
 ) async {
