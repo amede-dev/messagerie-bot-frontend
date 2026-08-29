@@ -278,17 +278,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: Image.asset(
-                'assets/images/messangeur.png',
-                width: 24,
-                height: 24,
+              child: const ImageIcon(
+                AssetImage('assets/images/messangeur.png'),
+                color: Colors.black,
+                size: 24,
               ),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: Image.asset(
-                'assets/images/messangeur.png',
-                width: 26,
-                height: 26,
+              child: const ImageIcon(
+                AssetImage('assets/images/messangeur.png'),
+                color: AppColors.primary,
+                size: 26,
               ),
             ),
             label: 'Messages',

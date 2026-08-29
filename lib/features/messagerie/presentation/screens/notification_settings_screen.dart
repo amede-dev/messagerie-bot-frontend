@@ -50,10 +50,53 @@ class _NotificationSettingsScreenState
     if (mounted) _actualiser();
   }
 
+  Future<void> _supprimerToutesLesNotifications() async {
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer les notifications ?'),
+        content: const Text(
+          'Toutes vos notifications seront supprimées de la base de données.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer != true || !mounted) return;
+
+    try {
+      await ApiClient.instance.supprimerToutesLesNotifications();
+      setState(() => _notificationsFuture = Future.value(const []));
+    } catch (erreur) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Suppression impossible : $erreur')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(
+        title: const Text('Notifications'),
+        actions: [
+          IconButton(
+            onPressed: _supprimerToutesLesNotifications,
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Supprimer toutes les notifications',
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _rafraichir,
         child: ListView(

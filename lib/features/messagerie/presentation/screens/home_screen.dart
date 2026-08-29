@@ -99,17 +99,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: Image.asset(
-                'assets/images/messangeur.png',
-                width: 24,
-                height: 24,
+              child: const ImageIcon(
+                AssetImage('assets/images/messangeur.png'),
+                color: Colors.black,
+                size: 24,
               ),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: Image.asset(
-                'assets/images/messangeur.png',
-                width: 26,
-                height: 26,
+              child: const ImageIcon(
+                AssetImage('assets/images/messangeur.png'),
+                color: AppColors.primary,
+                size: 26,
               ),
             ),
             label: 'Messages',
@@ -446,15 +446,11 @@ class _RecentMessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dernierMessage = conversation.dernierMessage;
-    // Dans « Derniers messages privés », le nom correspond à l'auteur du
-    // dernier message, et non systématiquement au contact de la conversation.
     final nomExpediteur = dernierMessage?.expediteurNom.trim();
     final nomAffiche = nomExpediteur == null || nomExpediteur.isEmpty
         ? conversation.nom
         : nomExpediteur;
-    final initiales =
-        conversation.avatarInitiales ??
-        (nomAffiche.isNotEmpty ? nomAffiche[0] : '?');
+    final initiales = nomAffiche.isNotEmpty ? nomAffiche[0] : '?';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -471,7 +467,7 @@ class _RecentMessageCard extends StatelessWidget {
           initiales: initiales,
           size: 46,
           estEnLigne: conversation.estEnLigne,
-          imageUrl: conversation.photoUrl,
+          imageUrl: dernierMessage?.expediteurPhotoUrl ?? conversation.photoUrl,
         ),
         title: Text(
           nomAffiche,
