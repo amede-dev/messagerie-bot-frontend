@@ -30,9 +30,7 @@ class MessageModel {
     this.messageParentId,
   });
 
-  // ============================================================
   // JSON -> MessageModel
-  // ============================================================
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     final typeString = (json['type'] as String? ?? 'TEXTE').toUpperCase();
@@ -71,9 +69,7 @@ class MessageModel {
     );
   }
 
-  // ============================================================
   // MessageModel -> JSON
-  // ============================================================
 
   Map<String, dynamic> toJson() {
     return {
@@ -85,9 +81,7 @@ class MessageModel {
     };
   }
 
-  // ============================================================
   // COPY WITH
-  // ============================================================
 
   MessageModel copyWith({
     MessageStatut? statut,
