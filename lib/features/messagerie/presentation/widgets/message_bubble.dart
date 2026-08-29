@@ -159,9 +159,7 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  // ==========================================================================
   // CONTENU
-  // ==========================================================================
 
   Widget _contenuMessage(BuildContext context, Color couleurTexte) {
     switch (message.type) {
@@ -191,9 +189,7 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  // ==========================================================================
   // IMAGE
-  // ==========================================================================
 
   Widget _image(BuildContext context) {
     final url = AppConfig.resolveMediaUrl(message.contenu)!;
@@ -297,25 +293,19 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  // ==========================================================================
   // VIDEO
-  // ==========================================================================
 
   Widget _video() {
     return VideoMessagePlayer(url: message.contenu);
   }
 
-  // ==========================================================================
   // AUDIO
-  // ==========================================================================
 
   Widget _audio() {
     return AudioMessagePlayer(url: message.contenu);
   }
 
-  // ==========================================================================
   // DOCUMENT
-  // ==========================================================================
 
   Widget _document(BuildContext context, Color couleurTexte) {
     final nom = message.contenu.split('/').last;
@@ -374,9 +364,7 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-// =============================================================================
 // LECTEUR AUDIO
-// =============================================================================
 
 class AudioMessagePlayer extends StatefulWidget {
   final String url;
@@ -523,9 +511,7 @@ class _AudioMessagePlayerState extends State<AudioMessagePlayer> {
   }
 }
 
-// =============================================================================
 // LECTEUR VIDEO
-// =============================================================================
 
 class VideoMessagePlayer extends StatefulWidget {
   final String url;
