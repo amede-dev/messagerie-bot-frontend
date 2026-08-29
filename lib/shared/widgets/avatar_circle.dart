@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/config/app_config.dart';
 
-// Avatar rond avec initiales ou icône, utilisé dans la liste des
-// conversations, le chat et l'écran "nouvelle conversation".
+// Avatar rond avec initiales ou icône, utilisé dans la liste des conversations, le chat et l'écran "nouvelle conversation".
 class AvatarCircle extends StatelessWidget {
   final String? initiales;
   final IconData? icon;
