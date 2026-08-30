@@ -22,7 +22,7 @@ class MessagerieApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-    
+
       themeMode: ThemeMode.light,
       home: const _StartupGate(),
     );

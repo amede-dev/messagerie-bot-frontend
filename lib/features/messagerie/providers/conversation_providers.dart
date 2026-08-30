@@ -13,13 +13,11 @@ import '../data/conversation_repository.dart';
 import '../../../core/network/file_upload_service.dart';
 
 // REPOSITORY
-
 final conversationRepositoryProvider = Provider(
   (ref) => ConversationRepository(),
 );
 
 // CONTACTS UNIVERSITAIRES
-
 final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
   ref,
 ) async {
@@ -33,7 +31,6 @@ final contactsUniversitairesProvider = FutureProvider<List<AppUserModel>>((
 });
 
 // LISTE DES CONVERSATIONS
-
 final conversationListProvider =
     AsyncNotifierProvider<ConversationListNotifier, List<ConversationModel>>(
       ConversationListNotifier.new,
@@ -46,7 +43,6 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
   String? _utilisateurCourantId;
 
   // TRI DES CONVERSATIONS
-
   List<ConversationModel> _trierConversations(
     List<ConversationModel> conversations,
   ) {
@@ -82,6 +78,7 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
     _utilisateurCourantId = await AuthRepository().idUtilisateurConnecte();
     // Écouter les nouveaux messages
 
+    // Écouter les nouveaux messages
     _messageSubscription ??= WebSocketService.instance.messageStream.listen(
       _traiterNouveauMessage,
     );
@@ -201,7 +198,6 @@ class ConversationListNotifier extends AsyncNotifier<List<ConversationModel>> {
       }
 
       // Vérifier que cette conversation correspond à l'utilisateur concerné.
-
 
       if (conversation.utilisateurId != presence.utilisateurId) {
         return conversation;
@@ -329,8 +325,10 @@ class ChatMessagesNotifier
         _ajouterMessage(message);
       }
     });
-    _suppressionSubscription =
-        WebSocketService.instance.messageSuppressionStream.listen((suppression) {
+    _suppressionSubscription = WebSocketService
+        .instance
+        .messageSuppressionStream
+        .listen((suppression) {
           supprimerMessageLocalement(suppression.messageId);
         });
 
@@ -466,7 +464,7 @@ class ChatMessagesNotifier
   Future<void> envoyerFichier(File fichier, MessageType type) async {
     final fichierEnvoye = await FileUploadService.instance.upload(fichier);
 
-    // L'URL du fichier est enregistrée comme message via REST. 
+    // L'URL du fichier est enregistrée comme message via REST.
     final message = await ref
         .read(conversationRepositoryProvider)
         .envoyerMessage(arg, fichierEnvoye.url, type: type);

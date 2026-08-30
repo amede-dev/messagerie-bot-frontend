@@ -5,6 +5,7 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/utils/message_date_formatter.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
+import '../../../../shared/widgets/messenger_nav_icon.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
@@ -99,18 +100,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: Colors.black,
-                size: 24,
-              ),
+              child: const MessengerNavIcon(selected: false),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: AppColors.primary,
-                size: 26,
-              ),
+              child: const MessengerNavIcon(selected: true),
             ),
             label: 'Messages',
           ),

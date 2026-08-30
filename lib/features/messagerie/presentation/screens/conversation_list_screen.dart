@@ -6,6 +6,7 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/network/auth_repository.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
+import '../../../../shared/widgets/messenger_nav_icon.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 import '../../../../shared/widgets/uni_logo.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
@@ -38,7 +39,7 @@ class _ConversationListScreenState
   @override
   void initState() {
     super.initState();
-    // L'écran affiche désormais toutes les conversations 
+    // L'écran affiche désormais toutes les conversations
     _filtre = 'Toutes';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -94,7 +95,7 @@ class _ConversationListScreenState
   }
 
   // NOUVELLE CONVERSATION
-  
+
   Future<void> _ouvrirNouvelleConversation() async {
     await Navigator.of(
       context,
@@ -509,18 +510,10 @@ class _ConversationListScreenState
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: Colors.black,
-                size: 24,
-              ),
+              child: const MessengerNavIcon(selected: false),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: AppColors.primary,
-                size: 26,
-              ),
+              child: const MessengerNavIcon(selected: true),
             ),
             label: 'Messages',
           ),
@@ -689,7 +682,7 @@ class _ContactsRapides extends StatelessWidget {
   }
 }
 
-// Recherche de contacts 
+// Recherche de contacts
 class _RechercheContactsDialog extends StatefulWidget {
   const _RechercheContactsDialog({
     required this.contacts,

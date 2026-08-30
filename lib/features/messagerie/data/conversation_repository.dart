@@ -47,7 +47,7 @@ class ConversationRepository {
         .toList();
   }
 
-  // Démarre une conversation privée avec l'utilisat dont l'identifiant est [autreUtilisateurId]. 
+  // Démarre une conversation privée avec l'utilisat dont l'identifiant est [autreUtilisateurId].
   Future<ConversationModel> creerConversationPrivee(
     String autreUtilisateurId,
   ) async {
@@ -117,8 +117,6 @@ class ConversationRepository {
     if (AppConfig.useMockBackend) return;
     await _api.quitterConversation(conversationId);
   }
-
-  // ---- Données factices (démo / dev sans backend) ----
 
   List<ConversationModel> _mockConversations() {
     final maintenant = DateTime.now();

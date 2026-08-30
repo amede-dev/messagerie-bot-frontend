@@ -8,11 +8,10 @@ void main() {
   testWidgets('MessagerieApp se lance et affiche l\'écran des conversations', (
     WidgetTester tester,
   ) async {
- 
     await tester.pumpWidget(const ProviderScope(child: MessagerieApp()));
 
     // Un premier pump() suffit pour vérifier que l'app se construit sans erreur
-  
+
     await tester.pump();
 
     // Vérifie que l'écran affiche bien le titre de la messagerie.

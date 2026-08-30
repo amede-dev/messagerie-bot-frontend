@@ -108,7 +108,10 @@ class _ForwardMessageScreenState extends ConsumerState<ForwardMessageScreen> {
           if (_erreur != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(_erreur!, style: const TextStyle(color: AppColors.danger)),
+              child: Text(
+                _erreur!,
+                style: const TextStyle(color: AppColors.danger),
+              ),
             ),
           Expanded(
             child: _contacts.isEmpty && _erreur == null

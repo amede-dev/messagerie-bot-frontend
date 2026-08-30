@@ -38,9 +38,7 @@ class MessageSuppressionModel {
   const MessageSuppressionModel({required this.messageId});
 
   factory MessageSuppressionModel.fromJson(Map<String, dynamic> json) {
-    return MessageSuppressionModel(
-      messageId: json['messageId'].toString(),
-    );
+    return MessageSuppressionModel(messageId: json['messageId'].toString());
   }
 }
 
@@ -54,7 +52,7 @@ class WebSocketService {
   StompClient? _client;
 
   final _storage = const FlutterSecureStorage();
-  
+
   // STREAM DES MESSAGES
 
   final _messageController = StreamController<MessageModel>.broadcast();
@@ -109,7 +107,7 @@ class WebSocketService {
     }
 
     _isConnected = false;
-    
+
     // Créer le client STOMP
 
     _client = StompClient(

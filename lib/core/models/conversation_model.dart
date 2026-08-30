@@ -84,7 +84,8 @@ class ConversationModel {
       utilisateurId: json['utilisateurId']?.toString(),
 
       // Le backend renvoie normalement photoUrl.
-      photoUrl: json['photoUrl'] as String? ??
+      photoUrl:
+          json['photoUrl'] as String? ??
           (json['utilisateurId'] != null
               ? '/api/users/${json['utilisateurId']}/photo'
               : null),

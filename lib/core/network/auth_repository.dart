@@ -60,7 +60,6 @@ class AuthRepository {
     return _storage.read(key: 'utilisateur_id');
   }
 
-
   // VÉRIFIER LA CONNEXION
 
   Future<bool> estConnecte() async {
@@ -72,7 +71,6 @@ class AuthRepository {
   // DÉCONNEXION
 
   Future<void> deconnexion() async {
-
     await WebSocketService.instance.disconnect();
 
     // Ensuite seulement supprimer le JWT.

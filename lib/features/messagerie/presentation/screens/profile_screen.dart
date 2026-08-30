@@ -10,6 +10,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/file_upload_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/unread_badges.dart';
+import '../../../../shared/widgets/messenger_nav_icon.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import 'home_screen.dart';
 import 'conversation_list_screen.dart';
@@ -276,18 +277,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           NavigationDestination(
             icon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: Colors.black,
-                size: 24,
-              ),
+              child: const MessengerNavIcon(selected: false),
             ),
             selectedIcon: UnreadMessagesBadge(
-              child: const ImageIcon(
-                AssetImage('assets/images/messangeur.png'),
-                color: AppColors.primary,
-                size: 26,
-              ),
+              child: const MessengerNavIcon(selected: true),
             ),
             label: 'Messages',
           ),

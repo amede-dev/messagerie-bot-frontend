@@ -8,6 +8,7 @@ class ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
+
         // Render (offre gratuite) met le serveur en veille apres 15 min
         // d'inactivite : le reveil complet (Docker + JVM + Spring Boot)
         connectTimeout: const Duration(seconds: 60),

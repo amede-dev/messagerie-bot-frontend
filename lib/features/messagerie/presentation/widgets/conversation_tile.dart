@@ -5,7 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/utils/message_date_formatter.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 
-// Ligne de la liste des conversations 
+// Ligne de la liste des conversations
 
 class ConversationTile extends StatelessWidget {
   final ConversationModel conversation;

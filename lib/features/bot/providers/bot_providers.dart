@@ -18,7 +18,6 @@ final botChatProvider = NotifierProvider<BotChatNotifier, List<BotChatEntry>>(
 class BotChatNotifier extends Notifier<List<BotChatEntry>> {
   @override
   List<BotChatEntry> build() {
- 
     return [];
   }
 

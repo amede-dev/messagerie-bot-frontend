@@ -7,7 +7,7 @@ import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
 import 'chat_screen.dart';
 
-// Écran « Nouvelle discussion » : carnet de contacts affichant tous les utilisateurs 
+// Écran « Nouvelle discussion » : carnet de contacts affichant tous les utilisateurs
 
 class ContactListScreen extends ConsumerStatefulWidget {
   const ContactListScreen({super.key});
@@ -24,7 +24,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
   String? _erreur;
   List<AppUserModel> _contacts = [];
 
-  // Identifiant du contact sur lequel on vient de taper 
+  // Identifiant du contact sur lequel on vient de taper
   String? _idEnCoursDeCreation;
 
   @override
@@ -47,7 +47,7 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
     try {
       final repo = ref.read(conversationRepositoryProvider);
       final utilisateurs = await repo.fetchUsers();
-      // Tri alphabétique par nom de famille, comme un carnet de contacts.
+
       utilisateurs.sort(
         (a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()),
       );
@@ -85,11 +85,11 @@ class _ContactListScreenState extends ConsumerState<ContactListScreen> {
           .read(conversationRepositoryProvider)
           .creerConversationPrivee(contact.id);
 
-      // Rafraîchit la liste d'accueil pour que la discussion 
+      // Rafraîchit la liste d'accueil pour que la discussion
       await ref.read(conversationListProvider.notifier).rafraichir();
 
       if (!mounted) return;
-    
+
       navigator.pop();
       navigator.push(
         MaterialPageRoute(

@@ -10,7 +10,7 @@ import '../../../messagerie/presentation/widgets/message_bubble.dart';
 import '../../providers/bot_providers.dart';
 import '../widgets/quick_reply_chip.dart';
 
-// Écran de discussion avec l'assistant "Uni AI" 
+// Écran de discussion avec l'assistant "Uni AI"
 class BotChatScreen extends ConsumerWidget {
   const BotChatScreen({super.key});
 
@@ -57,10 +57,8 @@ class BotChatScreen extends ConsumerWidget {
                             message: entry.message,
                             estUtilisateurCourant:
                                 entry.message.expediteurId == 'me',
-                            onLongPress: () => _ouvrirActionsMessage(
-                              context,
-                              entry.message,
-                            ),
+                            onLongPress: () =>
+                                _ouvrirActionsMessage(context, entry.message),
                           ),
                           if (estDernier && entry.suggestions.isNotEmpty)
                             Padding(
@@ -137,13 +135,13 @@ class BotChatScreen extends ConsumerWidget {
     await Clipboard.setData(ClipboardData(text: message.contenu));
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message copié')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Message copié')));
   }
 }
 
-// Écran d'accueil affiché 
+// Écran d'accueil affiché
 class _UniEmptyState extends StatelessWidget {
   const _UniEmptyState();
 
