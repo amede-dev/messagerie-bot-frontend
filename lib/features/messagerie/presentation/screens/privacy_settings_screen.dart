@@ -39,7 +39,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                     'Les autres utilisateurs peuvent vous trouver.',
                   ),
                   value: _profilVisible,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   onChanged: (value) => setState(() => _profilVisible = value),
                 ),
                 SwitchListTile.adaptive(
@@ -48,7 +48,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                     'Les contacts voient si vous êtes connecté.',
                   ),
                   value: _presenceVisible,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   onChanged: (value) =>
                       setState(() => _presenceVisible = value),
                 ),
