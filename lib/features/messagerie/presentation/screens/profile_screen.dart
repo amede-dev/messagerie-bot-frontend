@@ -156,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       width: 104,
                                       height: 104,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(
+                                      errorBuilder: (_, _, _) => const Icon(
                                         Icons.person,
                                         color: AppColors.primary,
                                         size: 52,
