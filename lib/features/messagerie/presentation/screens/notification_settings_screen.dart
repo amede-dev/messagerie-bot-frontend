@@ -87,10 +87,9 @@ class _NotificationSettingsScreenState
                     : 'Les notifications sont désactivées.',
               ),
               value: _notificationsActivees,
-              activeColor: AppColors.primary,
-              onChanged: (value) => setState(
-                () => _notificationsActivees = value,
-              ),
+              activeThumbColor: AppColors.primary,
+              onChanged: (value) =>
+                  setState(() => _notificationsActivees = value),
             ),
           ),
           const SizedBox(height: 12),
