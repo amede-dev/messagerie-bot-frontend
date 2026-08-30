@@ -5,7 +5,6 @@ import '../../../../core/models/conversation_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../providers/conversation_providers.dart';
-import 'shared_media_screen.dart';
 
 class ConversationSettingsScreen extends ConsumerStatefulWidget {
   const ConversationSettingsScreen({super.key, required this.conversation});
@@ -27,46 +26,6 @@ class _ConversationSettingsScreenState
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  // BLOQUER
-
-  Future<void> _confirmerBlocage() async {
-    final confirme = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Bloquer ${widget.conversation.nom} ?'),
-
-        content: const Text(
-          'Cette action empêchera cette personne '
-          'de vous envoyer de nouveaux messages.',
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
-          ),
-
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-
-            onPressed: () => Navigator.of(context).pop(true),
-
-            child: const Text('Bloquer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirme != true || !mounted) {
-      return;
-    }
-
-    _informer(
-      'Le blocage sera activé dès que '
-      'l’API de profil sera disponible.',
-    );
   }
 
   // SUPPRIMER / QUITTER
@@ -203,57 +162,6 @@ class _TitreSection extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w800,
           color: AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-}
-
-// RACCOURCI
-
-class _Raccourci extends StatelessWidget {
-  const _Raccourci({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-
-  final String label;
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 72,
-
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-
-        onTap: onTap,
-
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primaryLight,
-
-              child: Icon(icon, color: AppColors.primary),
-            ),
-
-            const SizedBox(height: 6),
-
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-
-              style: const TextStyle(fontSize: 10),
-            ),
-          ],
         ),
       ),
     );

@@ -291,14 +291,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  // ACTION NON DISPONIBLE
-
-  void _annoncerAction(String action) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$action sera disponible prochainement.')),
-    );
-  }
-
   // PRÉSENCE
 
   String _statutPresence() {

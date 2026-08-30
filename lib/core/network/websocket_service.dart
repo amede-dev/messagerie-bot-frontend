@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
@@ -135,12 +136,15 @@ class WebSocketService {
 
         // Erreur WebSocket
         onWebSocketError: (error) {
-          print('Erreur WebSocket: $error');
+          developer.log('Erreur WebSocket: $error', name: 'WebSocketService');
         },
 
         // Erreur STOMP
         onStompError: (frame) {
-          print('Erreur STOMP: ${frame.body}');
+          developer.log(
+            'Erreur STOMP: ${frame.body}',
+            name: 'WebSocketService',
+          );
         },
 
         // Render peut être lent au démarrage
@@ -184,7 +188,10 @@ class WebSocketService {
 
           _messageController.add(message);
         } catch (e) {
-          print('Erreur traitement message: $e');
+          developer.log(
+            'Erreur traitement message: $e',
+            name: 'WebSocketService',
+          );
         }
       },
     );
@@ -206,7 +213,10 @@ class WebSocketService {
 
           _presenceController.add(presence);
         } catch (e) {
-          print('Erreur traitement présence: $e');
+          developer.log(
+            'Erreur traitement présence: $e',
+            name: 'WebSocketService',
+          );
         }
       },
     );
@@ -247,7 +257,10 @@ class WebSocketService {
 
           _messageController.add(message);
         } catch (e) {
-          print('Erreur message conversation: $e');
+          developer.log(
+            'Erreur message conversation: $e',
+            name: 'WebSocketService',
+          );
         }
       },
     );
@@ -261,7 +274,10 @@ class WebSocketService {
           final data = jsonDecode(frame.body!) as Map<String, dynamic>;
           _typingController.add(data);
         } catch (e) {
-          print('Erreur notification de frappe: $e');
+          developer.log(
+            'Erreur notification de frappe: $e',
+            name: 'WebSocketService',
+          );
         }
       },
     );
@@ -277,7 +293,10 @@ class WebSocketService {
             MessageSuppressionModel.fromJson(data),
           );
         } catch (e) {
-          print('Erreur suppression message: $e');
+          developer.log(
+            'Erreur suppression message: $e',
+            name: 'WebSocketService',
+          );
         }
       },
     );
@@ -329,7 +348,10 @@ class WebSocketService {
         _client!.deactivate();
       }
     } catch (e) {
-      print('Erreur déconnexion WebSocket: $e');
+      developer.log(
+        'Erreur déconnexion WebSocket: $e',
+        name: 'WebSocketService',
+      );
     }
 
     _client = null;

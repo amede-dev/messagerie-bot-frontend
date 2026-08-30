@@ -49,8 +49,9 @@ class _ForwardMessageScreenState extends ConsumerState<ForwardMessageScreen> {
       );
       if (mounted) setState(() => _contacts = contacts);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _erreur = 'Impossible de charger les contacts.');
+      }
     }
   }
 

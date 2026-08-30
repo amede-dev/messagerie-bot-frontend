@@ -202,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 14),
 
                         DropdownButtonFormField<String>(
-                          value: _role,
+                          initialValue: _role,
                           isExpanded: true,
                           menuMaxHeight: 260,
                           decoration: decorationChamp(
@@ -237,7 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 14),
 
                         DropdownButtonFormField<String>(
-                          value: _parcours,
+                          initialValue: _parcours,
                           isExpanded: true,
                           menuMaxHeight: 260,
                           decoration: decorationChamp(
@@ -266,7 +266,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 14),
 
                         DropdownButtonFormField<String>(
-                          value: _niveau,
+                          initialValue: _niveau,
                           isExpanded: true,
                           menuMaxHeight: 260,
                           decoration: decorationChamp(

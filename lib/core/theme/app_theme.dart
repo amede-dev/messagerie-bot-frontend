@@ -64,18 +64,18 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
         indicatorColor: AppColors.primaryLight,
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: states.contains(MaterialState.selected)
+            color: states.contains(WidgetState.selected)
                 ? AppColors.primary
                 : AppColors.textMuted,
           );
         }),
-        iconTheme: MaterialStateProperty.resolveWith((states) {
+        iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
-            color: states.contains(MaterialState.selected)
+            color: states.contains(WidgetState.selected)
                 ? AppColors.primary
                 : AppColors.textMuted,
           );
@@ -153,10 +153,8 @@ class AppTheme {
       navigationBarTheme: const NavigationBarThemeData(
         backgroundColor: Colors.black,
         indicatorColor: AppColors.primary,
-        labelTextStyle: MaterialStatePropertyAll(
-          TextStyle(color: Colors.white),
-        ),
-        iconTheme: MaterialStatePropertyAll(IconThemeData(color: Colors.white)),
+        labelTextStyle: WidgetStatePropertyAll(TextStyle(color: Colors.white)),
+        iconTheme: WidgetStatePropertyAll(IconThemeData(color: Colors.white)),
       ),
     );
   }

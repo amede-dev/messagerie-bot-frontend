@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/app_user_model.dart';
 import '../../../../core/models/conversation_model.dart';
-import '../../../../core/network/auth_repository.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/avatar_circle.dart';
 import '../../../../shared/widgets/messenger_nav_icon.dart';
 import '../../../../shared/widgets/unread_badges.dart';
 import '../../../../shared/widgets/uni_logo.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../bot/presentation/screens/bot_chat_screen.dart';
 import '../../providers/conversation_providers.dart';
 import '../widgets/conversation_tile.dart';
@@ -30,8 +28,6 @@ class ConversationListScreen extends ConsumerStatefulWidget {
 
 class _ConversationListScreenState
     extends ConsumerState<ConversationListScreen> {
-  final _authRepository = AuthRepository();
-
   String _filtre = 'Toutes';
 
   // INITIALISATION
@@ -226,54 +222,6 @@ class _ConversationListScreenState
         ),
       );
     }
-  }
-
-  // DÉCONNEXION
-
-  Future<void> _seDeconnecter() async {
-    final confirme = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Se déconnecter ?'),
-          content: const Text(
-            'Tu devras te reconnecter pour accéder à tes conversations.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: const Text(
-                'Se déconnecter',
-                style: TextStyle(color: AppColors.danger),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirme != true || !mounted) {
-      return;
-    }
-
-    await _authRepository.deconnexion();
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
   }
 
   // BUILD
@@ -595,7 +543,7 @@ class _ContactsRapides extends StatelessWidget {
       },
 
       // ERREUR
-      error: (_, __) {
+      error: (_, _) {
         return const SizedBox.shrink();
       },
 
@@ -628,7 +576,7 @@ class _ContactsRapides extends StatelessWidget {
 
                   itemCount: contacts.length,
 
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
 
                   itemBuilder: (context, index) {
                     final contact = contacts[index];
