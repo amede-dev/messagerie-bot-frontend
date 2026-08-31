@@ -325,11 +325,10 @@ class _RecentMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dernierMessage = conversation.dernierMessage;
-    final nomExpediteur = dernierMessage?.expediteurNom.trim();
-    final nomAffiche = nomExpediteur == null || nomExpediteur.isEmpty
-        ? conversation.nom
-        : nomExpediteur;
+    // Dans une conversation privée, le nom affiché doit toujours être celui
+    // de l'autre participant. Le dernier message peut avoir été envoyé par
+    // l'utilisateur connecté et ne doit donc pas remplacer ce nom.
+    final nomAffiche = conversation.nom;
     final initiales = nomAffiche.isNotEmpty ? nomAffiche[0] : '?';
 
     return Card(
@@ -347,7 +346,7 @@ class _RecentMessageCard extends StatelessWidget {
           initiales: initiales,
           size: 46,
           estEnLigne: conversation.estEnLigne,
-          imageUrl: dernierMessage?.expediteurPhotoUrl ?? conversation.photoUrl,
+          imageUrl: conversation.photoUrl,
         ),
         title: Text(
           nomAffiche,
